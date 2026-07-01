@@ -1076,7 +1076,7 @@ function renderQuestion() {
       const inputType = q.type === 'ma' ? 'checkbox' : 'radio';
       html += `<label class="option" data-oi="${oi}">
         <input type="${inputType}" name="q${q.id}" value="${oi}">
-        <span class="letter" style="background:#4f46e5;color:#fff;border-radius:4px;padding:2px 8px;font-size:.75rem;min-width:28px;text-align:center;">${oi+1}</span>
+        <span class="letter" style="background:#4f46e5;color:#fff;border-radius:4px;padding:2px 8px;font-size:.75rem;min-width:28px;text-align:center;">${String.fromCharCode(65 + oi)}</span>
         <span>${opt.text || opt}</span>
       </label>`;
     });
@@ -1197,8 +1197,8 @@ function submitAnswer() {
       // Correct if: selected == answer set
       isCorrect = selectedSet.size === correctSet.size && [...selectedSet].every(s => correctSet.has(s));
 
-      const correctNums = [...correctSet].map(i => i + 1).join(', ');
-      feedbackHtml = isCorrect ? '✔ 全部正确！' : `✘ 错误。正确答案：${correctNums}`;
+      const correctLetters = [...correctSet].map(i => String.fromCharCode(65 + i)).join(', ');
+      feedbackHtml = isCorrect ? '✔ 全部正确！' : `✘ 错误。正确答案：${correctLetters}`;
       fbClass = isCorrect ? 'correct-fb' : 'wrong-fb';
 
       options.forEach((opt, oi) => {
@@ -1361,7 +1361,7 @@ function reviewWrong() {
           ? (Array.isArray(q.answer) && q.answer.includes(oi))
           : q.answer === oi;
         html += `<div class="option ${isCorrect ? 'show-correct' : ''}" style="${isCorrect ? '' : 'opacity:.6;'}">
-          <span class="letter">${oi+1}.</span>
+          <span class="letter">${String.fromCharCode(65 + oi)}.</span>
           <span>${opt.text || opt}</span>
           ${isCorrect ? '<span style="margin-left:auto;color:#22c55e;font-weight:600;">✔</span>' : ''}
         </div>`;
