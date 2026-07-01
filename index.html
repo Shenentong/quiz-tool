@@ -390,6 +390,7 @@ function parseQuestions(rawText) {
   const questions = [];
   let current = null;
   let currentType = null;
+  let currentQuiz = '';
   let qnum = 0;
   let inAlt = false;
   let pendingAnswer = null; // accumulate multi-line answers
@@ -428,6 +429,7 @@ function parseQuestions(rawText) {
       id: questions.length + 1,
       number: current.number,
       type: current.type,
+      quiz: currentQuiz,
       text: current.text.trim(),
       altText: current.altText.trim(),
       options: current.options,
@@ -442,6 +444,10 @@ function parseQuestions(rawText) {
 
     // Separator lines
     if (/^[─━═▬█\-*=•○●❤️▶◆◇]{3,}$/.test(line)) { continue; }
+
+    // Quiz/section detection
+    const quizMatch = line.match(/^(Quiz\s*\d+[—:\s][^█▬]{0,60}|第[一二三四五六七八九十百零]+[章节部分课]|Unit\s*\d+|Chapter\s*\d+)/i);
+    if (quizMatch) { currentQuiz = quizMatch[1].trim(); continue; }
 
     // Section headers — detect type
     const zhSec = line.match(/[一二三四五六七八九十百]+[、．.\s]\s*(判断|单选|多选|填空|简答|名词解释)/);
