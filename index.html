@@ -1302,9 +1302,8 @@ function reviewWrong() {
         const isCorrect = q.type === 'ma'
           ? (Array.isArray(q.answer) && q.answer.includes(oi))
           : q.answer === oi;
-        const letter = String.fromCharCode(65 + oi);
         html += `<div class="option ${isCorrect ? 'show-correct' : ''}" style="${isCorrect ? '' : 'opacity:.6;'}">
-          <span class="letter">${letter}.</span>
+          <span class="letter">${oi+1}.</span>
           <span>${opt.text || opt}</span>
           ${isCorrect ? '<span style="margin-left:auto;color:#22c55e;font-weight:600;">✔</span>' : ''}
         </div>`;
