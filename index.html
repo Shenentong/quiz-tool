@@ -360,6 +360,9 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
 }
 .score-pop.correct-score { color: #22c55e; }
 .score-pop.wrong-score { color: #ef4444; }
+.type-filter-label { transition: opacity .15s, transform .1s; cursor: pointer; }
+.type-filter-label:hover { opacity: .85 !important; transform: translateY(-1px); }
+.type-filter-label:active { transform: translateY(0); }
 </style>
 </head>
 <body>
@@ -422,9 +425,19 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
   <div id="quizScreen" style="display:none">
     <div class="toolbar">
       <span class="file-name" id="fileName"></span>
+      <div class="filters" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <select id="quizFilter" style="padding:6px 10px;border-radius:8px;border:1px solid #d1d5db;font-size:.8rem;background:#fff;"></select>
+        <span style="display:flex;gap:4px;" id="typeFilters">
+          <label class="type-filter-label" data-type="tf" style="font-size:.75rem;cursor:pointer;padding:4px 8px;border-radius:6px;background:#dbeafe;color:#1e40af;font-weight:600;user-select:none;"><input type="checkbox" checked hidden> 判断</label>
+          <label class="type-filter-label" data-type="mc" style="font-size:.75rem;cursor:pointer;padding:4px 8px;border-radius:6px;background:#d1fae5;color:#065f46;font-weight:600;user-select:none;"><input type="checkbox" checked hidden> 单选</label>
+          <label class="type-filter-label" data-type="ma" style="font-size:.75rem;cursor:pointer;padding:4px 8px;border-radius:6px;background:#fef3c7;color:#92400e;font-weight:600;user-select:none;"><input type="checkbox" checked hidden> 多选</label>
+          <label class="type-filter-label" data-type="fill" style="font-size:.75rem;cursor:pointer;padding:4px 8px;border-radius:6px;background:#f3e8ff;color:#6b21a8;font-weight:600;user-select:none;"><input type="checkbox" checked hidden> 填空</label>
+        </span>
+      </div>
       <span class="stats" id="statsDisplay">0 / 0</span>
-      <button onclick="shuffleAndRestart()" class="primary" id="btnShuffle"> 打乱重来</button>
-      <button onclick="showUpload()" class="danger"> 退出</button>
+      <button onclick="applyFilters()" class="primary" style="padding:6px 14px;font-size:.8rem;">筛选</button>
+      <button onclick="shuffleAndRestart()" class="primary" id="btnShuffle">打乱</button>
+      <button onclick="showUpload()" class="danger">退出</button>
     </div>
     <div class="progress-wrap">
       <div class="progress-bar" id="progressBar"></div>
@@ -905,6 +918,7 @@ function startQuiz() {
   document.getElementById('quizScreen').style.display = 'block';
   document.getElementById('fileName').textContent = '' + state.fileName;
 
+  populateFilters();
   startNewRound();
 }
 
@@ -932,23 +946,62 @@ function startWrongQuiz() {
   startNewRound();
 }
 
+function getFilteredQuestions() {
+  const quizVal = document.getElementById('quizFilter').value;
+  let pool = state.allQuestions;
+  if (quizVal !== 'all') pool = pool.filter(q => q.quiz === quizVal);
+
+  const checkedTypes = [];
+  document.querySelectorAll('#typeFilters .type-filter-label').forEach(l => {
+    if (l.querySelector('input').checked) checkedTypes.push(l.dataset.type);
+  });
+  if (checkedTypes.length > 0 && checkedTypes.length < 4) {
+    pool = pool.filter(q => checkedTypes.includes(q.type));
+  }
+  return pool;
+}
+
+function populateFilters() {
+  const quizSet = new Set();
+  state.allQuestions.forEach(q => { if (q.quiz) quizSet.add(q.quiz); });
+  const sel = document.getElementById('quizFilter');
+  sel.innerHTML = '<option value="all">全部单元</option>';
+  [...quizSet].sort().forEach(q => {
+    const opt = document.createElement('option');
+    opt.value = q; opt.textContent = q; sel.appendChild(opt);
+  });
+  document.querySelectorAll('#typeFilters .type-filter-label').forEach(l => {
+    l.onclick = function() {
+      const cb = this.querySelector('input');
+      cb.checked = !cb.checked;
+      this.style.opacity = cb.checked ? '1' : '.4';
+    };
+  });
+}
+
+function applyFilters() {
+  if (state.history.length > 0 && !confirm('切换筛选条件将重新开始，确定吗？')) return;
+  startNewRound();
+}
+
 function startNewRound() {
   cleanupKeyboard();
-  const questions = clone(state.allQuestions);
+  const pool = getFilteredQuestions();
+  if (pool.length === 0) {
+    document.getElementById('quizArea').innerHTML =
+      '<div class="question-card" style="text-align:center;padding:40px;color:#6b7280;">没有符合条件的题目。<br>调整筛选条件后点「筛选」按钮。</div>';
+    updateProgress(); return;
+  }
+  const questions = clone(pool);
   shuffle(questions);
 
-  // Shuffle options within each question (but keep TF ordered)
   questions.forEach(q => {
     if (q.type !== 'tf' && q.options.length > 0) {
       const optIndices = q.options.map((_, i) => i);
       shuffle(optIndices);
       const newOpts = optIndices.map(i => q.options[i]);
-      // Remap answer
-      if (q.type === 'mc' && typeof q.answer === 'number') {
-        q.answer = optIndices.indexOf(q.answer);
-      } else if (q.type === 'ma' && Array.isArray(q.answer)) {
-        q.answer = q.answer.map(a => optIndices.indexOf(a));
-      }
+      if (q.type === 'mc' && typeof q.answer === 'number') q.answer = optIndices.indexOf(q.answer);
+      else if (q.type === 'ma' && Array.isArray(q.answer)) q.answer = q.answer.map(a => optIndices.indexOf(a));
       q.options = newOpts;
     }
   });
