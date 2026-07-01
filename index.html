@@ -363,6 +363,33 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
 .type-filter-label { transition: opacity .15s, transform .1s; cursor: pointer; }
 .type-filter-label:hover { opacity: .85 !important; transform: translateY(-1px); }
 .type-filter-label:active { transform: translateY(0); }
+
+/* Course cards */
+.course-list { max-width: 560px; margin: 0 auto 24px; }
+.course-card {
+  display: flex; align-items: center; gap: 12px;
+  background: #fff; border-radius: 12px; padding: 14px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 10px;
+  cursor: pointer; transition: all .15s; border: 2px solid transparent;
+}
+.course-card:hover { border-color: #4f46e5; background: #f8faff; }
+.course-card .icon { font-size: 1.5rem; }
+.course-card .info { flex: 1; }
+.course-card .name { font-size: .95rem; font-weight: 600; color: #1a1a2e; }
+.course-card .meta { font-size: .75rem; color: #9ca3af; margin-top: 2px; }
+.course-card .enter-btn {
+  padding: 6px 14px; border-radius: 8px; border: none;
+  font-size: .8rem; font-weight: 600; cursor: pointer;
+  background: #4f46e5; color: #fff; transition: all .15s;
+}
+.course-card .enter-btn:hover { background: #4338ca; }
+.course-card .del-btn {
+  padding: 6px 10px; border-radius: 8px; border: 1px solid #e5e7eb;
+  font-size: .75rem; cursor: pointer; background: #fff; color: #9ca3af;
+  transition: all .15s;
+}
+.course-card .del-btn:hover { border-color: #ef4444; color: #ef4444; }
+.new-course-area { max-width: 560px; margin: 0 auto; }
 </style>
 </head>
 <body>
@@ -376,24 +403,21 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
 
   <!-- ============ UPLOAD SCREEN ============ -->
   <div id="uploadScreen">
-    <div class="steps">
-      <div class="step active"><span class="num">1</span> 上传文档</div>
-      <span style="color:#d1d5db;">→</span>
-      <div class="step"><span class="num">2</span> 预览题目</div>
-      <span style="color:#d1d5db;">→</span>
-      <div class="step"><span class="num">3</span> 开始刷题</div>
-    </div>
-    <div class="upload-area-v2" id="dropZone">
-      <div class="icon">📄</div>
-      <h2>上传复习文档</h2>
-      <p>把你的 Word 复习资料拖到这里</p>
-      <div class="hint">支持 .docx 格式 · 本地处理，不上传服务器</div>
-      <input type="file" id="fileInput" accept=".docx">
-    </div>
-    <div class="demo-section">
-      <button onclick="loadDemo()">🎯 示例题目</button>
-      <button id="wrongBtn" onclick="startWrongQuiz()" style="display:none;border-color:#ef4444;color:#ef4444;">📕 错题本 <span id="wrongCount"></span></button>
-      <button id="clearWrongBtn" onclick="clearWrongBank()" style="display:none;padding:4px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:.75rem;cursor:pointer;background:transparent;color:#9ca3af;">清除全部</button>
+    <!-- 已有课程列表 -->
+    <div id="courseList" class="course-list"></div>
+
+    <!-- 上传新课程 -->
+    <div class="new-course-area">
+      <div class="upload-area-v2" id="dropZone">
+        <div class="icon">📄</div>
+        <h2>上传新课程</h2>
+        <p>上传 Word 文档，自动生成刷题页面</p>
+        <div class="hint">支持 .docx 格式 · 本地处理，不上传服务器</div>
+        <input type="file" id="fileInput" accept=".docx">
+      </div>
+      <div class="demo-section" style="margin-top:12px;">
+        <button onclick="loadDemo()">🎯 示例题目</button>
+      </div>
     </div>
   </div>
 
@@ -436,6 +460,7 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
         </span>
       </div>
       <span class="stats" id="statsDisplay">0 / 0</span>
+      <button id="wrongBtn2" onclick="startWrongQuiz()" style="display:none;padding:6px 14px;border-radius:8px;border:1px solid #ef4444;font-size:.8rem;cursor:pointer;background:#fff;color:#ef4444;font-weight:600;">📕 错题</button>
       <button onclick="shuffleAndRestart()" class="primary" id="btnShuffle">打乱</button>
       <button onclick="showUpload()" class="danger">退出</button>
     </div>
@@ -716,60 +741,128 @@ const state = {
 };
 
 // ===================================================================
-// 错题本 — localStorage 持久化
+// 课程系统 + 错题本 — localStorage 持久化
 // ===================================================================
 
-const WRONG_KEY = 'quiz_tool_wrong';
+const COURSES_KEY = 'quiz_tool_courses';
+let currentCourseId = null;
 
-function getWrongQuestions() {
-  try { return JSON.parse(localStorage.getItem(WRONG_KEY)) || []; } catch(e) { return []; }
+function getCourses() {
+  try { return JSON.parse(localStorage.getItem(COURSES_KEY)) || []; } catch(e) { return []; }
 }
 
-function saveWrongQuestions(qs) {
-  localStorage.setItem(WRONG_KEY, JSON.stringify(qs));
+function saveCourses(courses) {
+  localStorage.setItem(COURSES_KEY, JSON.stringify(courses));
+}
+
+function addCourse(name, fileName, questions) {
+  const courses = getCourses();
+  // 同名覆盖
+  const existing = courses.findIndex(c => c.name === name);
+  const course = { id: Date.now().toString(), name, fileName, questions: clone(questions), wrongQuestions: [], date: Date.now() };
+  if (existing >= 0) courses[existing] = course;
+  else courses.push(course);
+  saveCourses(courses);
+  return course;
+}
+
+function deleteCourse(id) {
+  if (!confirm('确定删除该课程及其错题吗？')) return;
+  let courses = getCourses();
+  courses = courses.filter(c => c.id !== id);
+  saveCourses(courses);
+  if (currentCourseId === id) currentCourseId = null;
+  renderCourseList();
+}
+
+function setCurrentCourse(id) {
+  const courses = getCourses();
+  const course = courses.find(c => c.id === id);
+  if (!course) return;
+  currentCourseId = course.id;
+  state.allQuestions = clone(course.questions);
+  state.fileName = course.name;
+  state.wrongMode = false;
+}
+
+// 错题本（按课程）
+function getCourseWrong(courseId) {
+  const courses = getCourses();
+  const course = courses.find(c => c.id === courseId);
+  return course ? course.wrongQuestions : [];
+}
+
+function saveCourseWrong(courseId, wrong) {
+  const courses = getCourses();
+  const course = courses.find(c => c.id === courseId);
+  if (course) { course.wrongQuestions = wrong; saveCourses(courses); }
 }
 
 function addWrongFromRound() {
-  let wrong = getWrongQuestions();
+  if (!currentCourseId) return;
+  let wrong = getCourseWrong(currentCourseId);
   state.history.forEach(h => {
     if (!h.correct) {
       const q = state.roundQuestions[h.index];
-      if (q && !wrong.some(w => w.text === q.text)) {
-        wrong.push(clone(q));
-      }
+      if (q && !wrong.some(w => w.text === q.text)) wrong.push(clone(q));
     }
   });
-  saveWrongQuestions(wrong);
-  updateWrongBtn();
+  saveCourseWrong(currentCourseId, wrong);
 }
 
 function removeWrongFromBank(text) {
-  let wrong = getWrongQuestions();
+  if (!currentCourseId) return;
+  let wrong = getCourseWrong(currentCourseId);
   wrong = wrong.filter(w => w.text !== text);
-  saveWrongQuestions(wrong);
-  updateWrongBtn();
+  saveCourseWrong(currentCourseId, wrong);
 }
 
 function clearWrongBank() {
-  if (!confirm('确定清空错题本吗？')) return;
-  saveWrongQuestions([]);
-  updateWrongBtn();
-  // 如果在错题本模式中，返回首页
+  if (!currentCourseId) { alert('请先选择课程'); return; }
+  if (!confirm('确定清空该课程的错题本吗？')) return;
+  saveCourseWrong(currentCourseId, []);
   if (state.wrongMode) showUpload();
+  else renderCourseList();
 }
 
-function updateWrongBtn() {
-  const btn = document.getElementById('wrongBtn');
-  const clearBtn = document.getElementById('clearWrongBtn');
-  const count = getWrongQuestions().length;
-  if (count > 0) {
-    btn.style.display = 'inline-block';
-    clearBtn.style.display = 'inline-block';
-    document.getElementById('wrongCount').textContent = `(${count})`;
+function renderCourseList() {
+  const container = document.getElementById('courseList');
+  const courses = getCourses();
+  if (courses.length === 0) { container.innerHTML = ''; return; }
+
+  container.innerHTML = '<h3 style="font-size:.95rem;color:#374151;margin-bottom:12px;">我的课程</h3>' +
+    courses.map(c => {
+      const wrongCount = c.wrongQuestions.length;
+      return `<div class="course-card" onclick="enterCourse('${c.id}')">
+        <div class="icon">📚</div>
+        <div class="info">
+          <div class="name">${c.name}</div>
+          <div class="meta">${c.questions.length} 道题${wrongCount > 0 ? ` · 错题 ${wrongCount} 道` : ''}</div>
+        </div>
+        <button class="del-btn" onclick="event.stopPropagation();deleteCourse('${c.id}')">删除</button>
+      </div>`;
+    }).join('');
+}
+
+function enterCourse(id) {
+  setCurrentCourse(id);
+  document.getElementById('uploadScreen').style.display = 'none';
+  document.getElementById('previewArea').style.display = 'none';
+  document.getElementById('quizScreen').style.display = 'block';
+  document.getElementById('fileName').textContent = state.fileName;
+
+  // 有错题时显示错题按钮
+  const wrong = getCourseWrong(id);
+  const wrongBtn2 = document.getElementById('wrongBtn2');
+  if (wrong.length > 0) {
+    wrongBtn2.style.display = 'inline-block';
+    wrongBtn2.innerHTML = `📕 错题 (${wrong.length})`;
   } else {
-    btn.style.display = 'none';
-    clearBtn.style.display = 'none';
+    wrongBtn2.style.display = 'none';
   }
+
+  populateFilters();
+  startNewRound();
 }
 
 // 更新 showUpload：显示错题按钮
@@ -779,8 +872,10 @@ function showUpload() {
   document.getElementById('errorArea').style.display = 'none';
   document.getElementById('previewArea').style.display = 'none';
   document.getElementById('quizScreen').style.display = 'none';
+  document.getElementById('quizArea').innerHTML = '';
   cleanupKeyboard();
-  updateWrongBtn();
+  state.wrongMode = false;
+  renderCourseList();
 }
 
 
@@ -908,13 +1003,16 @@ function showPreview(questions, rawText, validCount) {
 // ===================================================================
 
 function loadDemo() {
-  state.allQuestions = [
+  const questions = [
     { id:1, type:'mc', quiz:'示例', text:'操作系统的核心功能是什么？', altText:'', options:[{label:'A',text:'文件管理'},{label:'B',text:'资源管理'},{label:'C',text:'进程管理'},{label:'D',text:'存储管理'}], answer:1, number:1 },
     { id:2, type:'tf', quiz:'示例', text:'Linux 是一个开源操作系统。', altText:'', options:[{label:'A',text:'True'},{label:'B',text:'False'}], answer:0, number:2 },
     { id:3, type:'mc', quiz:'示例', text:'1GB 等于多少 MB？', altText:'', options:[{label:'A',text:'100'},{label:'B',text:'512'},{label:'C',text:'1024'},{label:'D',text:'2048'}], answer:2, number:3 },
     { id:4, type:'ma', quiz:'示例', text:'以下哪些属于操作系统？', altText:'', options:[{label:'A',text:'Windows'},{label:'B',text:'Linux'},{label:'C',text:'macOS'},{label:'D',text:'Photoshop'}], answer:[0,1,2], number:4 },
     { id:5, type:'tf', quiz:'示例', text:'Python 是一种编译型语言。', altText:'', options:[{label:'A',text:'True'},{label:'B',text:'False'}], answer:1, number:5 },
   ];
+  const course = addCourse('示例题目', '示例题目', questions);
+  currentCourseId = course.id;
+  state.allQuestions = questions;
   state.fileName = '示例题目';
   document.getElementById('uploadScreen').style.display = 'none';
   showPreview(state.allQuestions, '', 5);
@@ -925,18 +1023,25 @@ function loadDemo() {
 // ===================================================================
 
 function startQuiz() {
+  // 保存为课程（用文件名作为课程名）
+  let name = state.fileName.replace(/\.docx$/i, '').trim();
+  if (!name || name === '示例题目') name = '示例题目';
+  const course = addCourse(name, state.fileName, state.allQuestions);
+  currentCourseId = course.id;
+
   document.getElementById('previewArea').style.display = 'none';
   document.getElementById('quizScreen').style.display = 'block';
-  document.getElementById('fileName').textContent = '' + state.fileName;
+  document.getElementById('fileName').textContent = name;
 
   populateFilters();
   startNewRound();
 }
 
 function startWrongQuiz() {
-  const wrong = getWrongQuestions();
+  if (!currentCourseId) { alert('请先选择一个课程'); return; }
+  const wrong = getCourseWrong(currentCourseId);
   if (wrong.length === 0) {
-    alert('错题本还是空的！做完题答错的会自动收录。');
+    alert('该课程错题本还是空的！做完题答错的会自动收录。');
     return;
   }
 
