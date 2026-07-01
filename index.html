@@ -337,6 +337,14 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
         <button onclick="loadDemo()">🎯 示例题目</button>
       </div>
     </div>
+    <div style="max-width:560px;margin:24px auto 0;background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);font-size:.8rem;">
+      <h4 style="font-size:.85rem;color:#374151;margin-bottom:8px;">⌨ 使用技巧</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;color:#374151;">按 <b>1 2 3 4</b> 选选项</span>
+        <span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;color:#374151;">按 <b>Enter</b> 提交 / 下一题</span>
+        <span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;color:#374151;">答题后自动播放 <b>音效</b> 和 <b>动画</b></span>
+      </div>
+    </div>
   </div>
 
   <!-- ============ LOADING ============ -->
@@ -1099,12 +1107,10 @@ function renderQuestion() {
   } else {
     html += `<div class="options">`;
     q.options.forEach((opt, oi) => {
-      const letter = String.fromCharCode(65 + oi);
       const inputType = q.type === 'ma' ? 'checkbox' : 'radio';
       html += `<label class="option" data-oi="${oi}">
         <input type="${inputType}" name="q${q.id}" value="${oi}">
         <span class="letter" style="background:#4f46e5;color:#fff;border-radius:4px;padding:2px 8px;font-size:.75rem;min-width:28px;text-align:center;">${oi+1}</span>
-        <span class="letter">${letter}.</span>
         <span>${opt.text || opt}</span>
       </label>`;
     });
@@ -1338,8 +1344,8 @@ function submitAnswer() {
       // Correct if: selected == answer set
       isCorrect = selectedSet.size === correctSet.size && [...selectedSet].every(s => correctSet.has(s));
 
-      const correctLetters = [...correctSet].map(i => String.fromCharCode(65 + i)).join(', ');
-      feedbackHtml = isCorrect ? '✔ 全部正确！' : `✘ 错误。正确答案：${correctLetters}`;
+      const correctNums = [...correctSet].map(i => i + 1).join(', ');
+      feedbackHtml = isCorrect ? '✔ 全部正确！' : `✘ 错误。正确答案：${correctNums}`;
       fbClass = isCorrect ? 'correct-fb' : 'wrong-fb';
 
       options.forEach((opt, oi) => {
