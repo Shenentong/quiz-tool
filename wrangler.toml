@@ -1,7 +1,0 @@
-name = "quiz-tool"
-pages_build_output_dir = "."
-
-[[d1_databases]]
-binding = "DB"
-database_name = "quiz-tool-feedback"
-database_id = "723561ff-1519-4229-9e22-1bc79317bc19"
