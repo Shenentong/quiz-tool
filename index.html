@@ -211,6 +211,35 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
 .parsed-item .preview { color: #6b7280; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 
+/* 结果弹窗 */
+.result-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,.5); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeInBg .3s ease;
+}
+@keyframes fadeInBg { from { opacity: 0; } to { opacity: 1; } }
+.result-modal {
+  background: #fff; border-radius: 20px; padding: 36px 40px;
+  text-align: center; max-width: 420px; width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  animation: popIn .4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.result-modal .big-emoji { font-size: 5rem; margin-bottom: 8px; }
+.result-modal .rate { font-size: 4rem; font-weight: 900; margin: 8px 0; }
+.result-modal .rate.great { color: #22c55e; }
+.result-modal .rate.good { color: #4f46e5; }
+.result-modal .rate.ok { color: #f59e0b; }
+.result-modal .rate.bad { color: #ef4444; }
+.result-modal .subtitle { color: #6b7280; font-size: 1rem; margin-bottom: 20px; }
+.result-modal button {
+  padding: 12px 36px; border-radius: 12px; border: none;
+  font-size: 1rem; font-weight: 700; cursor: pointer;
+  background: #1a1a2e; color: #fff; transition: all .15s;
+}
+.result-modal button:hover { background: #16213e; transform: translateY(-1px); }
+
 .type-filter-label { transition: opacity .15s, transform .1s; cursor: pointer; }
 .type-filter-label:hover { opacity: .85 !important; transform: translateY(-1px); }
 .type-filter-label:active { transform: translateY(0); }
@@ -1247,6 +1276,13 @@ function renderSummary() {
   // 错题本模式：看看还剩多少
   const remainingWrong = state.wrongMode ? getWrongQuestions().length : 0;
 
+  // 决定等级
+  let rateClass = 'great', emoji = '🏆';
+  if (pct >= 80) { rateClass = 'great'; emoji = '🏆'; }
+  else if (pct >= 60) { rateClass = 'good'; emoji = '👍'; }
+  else if (pct >= 40) { rateClass = 'ok'; emoji = '📖'; }
+  else { rateClass = 'bad'; emoji = '💪'; }
+
   area.innerHTML = `<div class="summary-wrap question-card">
     <h2>${state.wrongMode ? '📕 错题本' : '答题完成！'}</h2>
     <div class="score">${pct}%</div>
@@ -1262,8 +1298,24 @@ function renderSummary() {
       <button onclick="shuffleAndRestart()" style="padding:12px 32px;background:#1a1a2e;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;"> 再来一轮</button>
       <button onclick="showUpload()" style="padding:12px 32px;background:#6b7280;color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;"> 换文档</button>
     </div>
+  </div>
+
+  <!-- 弹窗 -->
+  <div class="result-overlay" id="resultPopup" onclick="dismissResultPopup()">
+    <div class="result-modal" onclick="event.stopPropagation()">
+      <div class="big-emoji">${emoji}</div>
+      <div style="font-size:.9rem;color:#6b7280;">正确率</div>
+      <div class="rate ${rateClass}">${pct}%</div>
+      <div class="subtitle">${correct}/${total} 正确 · ${wrong} 错误 · ${minLabel}</div>
+      <button onclick="dismissResultPopup()">查看详情</button>
+    </div>
   </div>`;
   updateProgress();
+}
+
+function dismissResultPopup() {
+  const popup = document.getElementById('resultPopup');
+  if (popup) { popup.style.animation = 'fadeInBg .2s ease reverse'; setTimeout(() => popup.remove(), 200); }
 }
 
 function reviewWrong() {
