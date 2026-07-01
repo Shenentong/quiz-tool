@@ -1176,6 +1176,8 @@ function renderQuestion() {
 // 音效 & 动画系统
 // ===================================================================
 
+let soundOn = true;
+let animOn = true;
 let audioCtx = null;
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1273,19 +1275,15 @@ function triggerCardEffect(isCorrect) {
 }
 
 function triggerFeedback(isCorrect) {
-  if (soundOn) {
-    if (isCorrect) playCorrectSound(); else playWrongSound();
-  }
-  if (animOn) {
-    showFeedbackOverlay(isCorrect);
-    triggerCardEffect(isCorrect);
-    const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-    if (isCorrect) { spawnConfetti(cx, cy - 60); spawnParticles(cx, cy, true); }
-    else { spawnParticles(cx, cy, false); }
-    const card = document.querySelector('.question-card');
-    if (card) { const r = card.getBoundingClientRect(); showScorePop(r.left + r.width/2, r.top, isCorrect); }
-    else { showScorePop(cx, cy - 100, isCorrect); }
-  }
+  try {
+    if (soundOn) {
+      if (isCorrect) playCorrectSound(); else playWrongSound();
+    }
+    if (animOn) {
+      showFeedbackOverlay(isCorrect);
+      triggerCardEffect(isCorrect);
+    }
+  } catch(e) { console.log('feedback err:', e); }
 }
 
 function submitAnswer() {
