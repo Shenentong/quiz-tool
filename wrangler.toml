@@ -1,0 +1,7 @@
+name = "quiz-tool"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "quiz-tool-feedback"
+database_id = "CHANGE_ME_RUN_npx_wrangler_d1_create_quiz-tool-feedback"

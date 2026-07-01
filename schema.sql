@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS feedback (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  text TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  is_read INTEGER DEFAULT 0
+);

@@ -1539,5 +1539,121 @@ function updateStats() {
 
 showUpload();
 </script>
+
+<!-- 反馈按钮 & 弹窗 -->
+<style>
+.feedback-float {
+  position: fixed; bottom: 24px; right: 24px; z-index: 999;
+  width: 48px; height: 48px; border-radius: 50%; border: none;
+  background: #4f46e5; color: #fff; font-size: 1.2rem; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(79,70,229,.35); transition: all .2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.feedback-float:hover { transform: scale(1.1); background: #4338ca; }
+.feedback-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,.4); z-index: 1000; display: none;
+  align-items: center; justify-content: center;
+  animation: fadeInBg .25s ease;
+}
+.feedback-overlay.show { display: flex; }
+.feedback-modal {
+  background: #fff; border-radius: 16px; padding: 28px; width: 90%; max-width: 460px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25); animation: popIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+.feedback-modal h3 { font-size: 1.1rem; margin-bottom: 4px; }
+.feedback-modal .sub { font-size: .8rem; color: #9ca3af; margin-bottom: 14px; }
+.feedback-modal textarea {
+  width: 100%; height: 120px; padding: 12px 14px; border: 2px solid #e5e7eb;
+  border-radius: 10px; font-size: .9rem; font-family: inherit; outline: none;
+  resize: vertical; transition: border .15s; line-height: 1.6;
+}
+.feedback-modal textarea:focus { border-color: #4f46e5; }
+.feedback-modal .fb-actions { display: flex; gap: 10px; margin-top: 12px; }
+.feedback-modal .fb-actions button {
+  padding: 10px 24px; border-radius: 10px; border: none;
+  font-size: .9rem; font-weight: 600; cursor: pointer; transition: .15s;
+}
+.feedback-modal .btn-submit-fb { background: #4f46e5; color: #fff; flex: 1; }
+.feedback-modal .btn-submit-fb:hover { background: #4338ca; }
+.feedback-modal .btn-submit-fb:disabled { opacity: .5; cursor: not-allowed; }
+.feedback-modal .btn-cancel-fb { background: #f3f4f6; color: #374151; }
+.feedback-modal .btn-cancel-fb:hover { background: #e5e7eb; }
+.feedback-modal .fb-status { font-size: .85rem; margin-top: 10px; min-height: 1.4em; }
+.feedback-modal .fb-status.success { color: #059669; }
+.feedback-modal .fb-status.error { color: #ef4444; }
+</style>
+
+<button class="feedback-float" id="fbBtn" title="反馈">💬</button>
+
+<div class="feedback-overlay" id="fbOverlay">
+  <div class="feedback-modal">
+    <h3>💬 反馈 & 建议</h3>
+    <div class="sub">遇到什么问题？或者有什么建议？匿名提交，仅管理员可见。</div>
+    <textarea id="fbInput" placeholder="写点什么…" maxlength="2000"></textarea>
+    <div class="fb-actions">
+      <button class="btn-cancel-fb" onclick="closeFeedback()">取消</button>
+      <button class="btn-submit-fb" id="fbSubmit" onclick="submitFeedback()">提交反馈</button>
+    </div>
+    <div class="fb-status" id="fbStatus"></div>
+  </div>
+</div>
+
+<script>
+// Feedback
+const FB_API = '/api/feedback';
+
+document.getElementById('fbBtn').onclick = () => {
+  document.getElementById('fbOverlay').classList.add('show');
+  document.getElementById('fbInput').value = '';
+  document.getElementById('fbStatus').textContent = '';
+  document.getElementById('fbSubmit').disabled = false;
+  document.getElementById('fbSubmit').textContent = '提交反馈';
+  setTimeout(() => document.getElementById('fbInput').focus(), 300);
+};
+
+document.getElementById('fbOverlay').onclick = e => {
+  if (e.target === document.getElementById('fbOverlay')) closeFeedback();
+};
+
+function closeFeedback() {
+  document.getElementById('fbOverlay').classList.remove('show');
+}
+
+async function submitFeedback() {
+  const text = document.getElementById('fbInput').value.trim();
+  const status = document.getElementById('fbStatus');
+  const btn = document.getElementById('fbSubmit');
+  if (!text) { status.textContent = '请写点什么'; status.className = 'fb-status error'; return; }
+
+  btn.disabled = true;
+  btn.textContent = '提交中…';
+  status.textContent = '';
+
+  try {
+    const res = await fetch(FB_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    if (!res.ok) throw new Error('提交失败');
+    status.textContent = '✅ 感谢反馈！我们会持续改进 🚀';
+    status.className = 'fb-status success';
+    document.getElementById('fbInput').value = '';
+    setTimeout(closeFeedback, 1500);
+  } catch (e) {
+    status.textContent = '❌ 提交失败，请稍后重试';
+    status.className = 'fb-status error';
+    btn.disabled = false;
+    btn.textContent = '提交反馈';
+  }
+}
+
+// Ctrl+Enter to submit
+document.getElementById('fbInput').addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 'Enter') submitFeedback();
+});
+</script>
+
 </body>
 </html>
