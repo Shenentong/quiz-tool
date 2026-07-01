@@ -619,6 +619,7 @@ function showUpload() {
   document.getElementById('errorArea').style.display = 'none';
   document.getElementById('previewArea').style.display = 'none';
   document.getElementById('quizScreen').style.display = 'none';
+  document.getElementById('quizArea').innerHTML = '';
   cleanupKeyboard();
 }
 
@@ -766,6 +767,7 @@ function loadDemo() {
   ];
   state.fileName = '示例题目';
 
+  document.getElementById('uploadScreen').style.display = 'none';
   showPreview(state.allQuestions, '', 6);
 }
 
