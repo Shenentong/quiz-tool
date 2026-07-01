@@ -38,18 +38,34 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
 .upload-area .supported { margin-top: 20px; font-size: .75rem; color: #9ca3af; }
 
 /* Format Guide */
-.format-guide {
-  max-width: 600px; margin: 24px auto 0; background: #fff;
-  border-radius: 14px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,.08);
+.steps { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; }
+.step { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 99px; font-size: .85rem; font-weight: 500; color: #9ca3af; background: #f3f4f6; }
+.step.active { background: #eef2ff; color: #4f46e5; }
+.step .num { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; background: #d1d5db; color: #fff; }
+.step.active .num { background: #4f46e5; }
+.upload-area-v2 {
+  background: #fff; border: 3px dashed #d1d5db; border-radius: 20px;
+  padding: 50px 40px; text-align: center; cursor: pointer;
+  transition: all .2s; max-width: 560px; margin: 0 auto;
 }
-.format-guide h3 { font-size: .9rem; color: #374151; margin-bottom: 10px; }
-.format-guide pre {
-  background: #f8f9fb; border-radius: 8px; padding: 12px 16px;
-  font-size: .75rem; line-height: 1.5; overflow-x: auto; color: #374151;
-  border: 1px solid #e5e7eb;
+.upload-area-v2:hover, .upload-area-v2.dragover { border-color: #4f46e5; background: #f8faff; }
+.upload-area-v2 .icon { width: 64px; height: 64px; border-radius: 16px; background: #eef2ff; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 1.6rem; }
+.upload-area-v2 h2 { font-size: 1.2rem; color: #1a1a2e; margin-bottom: 4px; }
+.upload-area-v2 p { color: #6b7280; font-size: .9rem; }
+.upload-area-v2 .hint { margin-top: 12px; font-size: .8rem; color: #9ca3af; }
+.upload-area-v2 input[type="file"] { display: none; }
+.demo-section { text-align: center; margin-top: 20px; }
+.demo-section button {
+  padding: 10px 24px; border-radius: 10px; border: 2px solid #e5e7eb;
+  font-size: .9rem; font-weight: 600; cursor: pointer; transition: all .15s;
+  background: #fff; color: #374151;
 }
-.format-guide .good { color: #059669; font-weight: 600; }
-.format-guide .bad { color: #dc2626; font-weight: 600; }
+.demo-section button:hover { border-color: #4f46e5; color: #4f46e5; background: #f8faff; }
+.features { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px; max-width: 640px; margin-left: auto; margin-right: auto; }
+.feature-card { background: #fff; border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 130px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+.feature-card .icon { font-size: 1.5rem; margin-bottom: 6px; }
+.feature-card h4 { font-size: .85rem; color: #1a1a2e; margin-bottom: 2px; }
+.feature-card p { font-size: .75rem; color: #9ca3af; }
 
 /* Loading */
 .loading-area { text-align: center; padding: 60px 20px; display: none; }
@@ -217,33 +233,52 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
 
   <!-- ============ UPLOAD SCREEN ============ -->
   <div id="uploadScreen">
-    <div class="upload-area" id="dropZone">
-      <div class="icon"> + </div>
+    <!-- Step indicator -->
+    <div class="steps">
+      <div class="step active"><span class="num">1</span> 上传文档</div>
+      <span style="color:#d1d5db;">→</span>
+      <div class="step"><span class="num">2</span> 预览题目</div>
+      <span style="color:#d1d5db;">→</span>
+      <div class="step"><span class="num">3</span> 开始刷题</div>
+    </div>
+
+    <!-- Upload area -->
+    <div class="upload-area-v2" id="dropZone">
+      <div class="icon">📄</div>
       <h2>上传复习文档</h2>
-      <p>拖拽 Word 文档到此处，或点击选择文件</p>
-      <div class="hint">支持 .docx 格式</div>
-      <div class="supported">文档仅在本地浏览器处理，不会上传到任何服务器</div>
+      <p>把你的 Word 复习资料拖到这里，或点击选择文件</p>
+      <div class="hint">支持 .docx 格式 · 文档仅在本地处理，不会上传到任何服务器</div>
       <input type="file" id="fileInput" accept=".docx">
     </div>
 
-    <div class="format-guide">
-      <h3> 文档格式建议</h3>
-      <p style="font-size:.8rem;color:#6b7280;margin-bottom:8px;">为了让工具准确识别题目，建议文档结构如下：</p>
-      <pre>
-1. 操作系统的核心功能是什么？
-A. 文件管理  B. 资源管理  C. 进程管理  D. 存储管理
-答案：B
+    <!-- Try demo -->
+    <div class="demo-section">
+      <span style="font-size:.85rem;color:#9ca3af;">没有文档？</span>
+      <button onclick="loadDemo()">🎯 试试示例题目</button>
+    </div>
 
-2. Linux 是多用户操作系统。
-答案：对
-
-3. 以下哪些属于操作系统类型？（多选）
-A. 批处理系统  B. 实时系统  C. 分时系统  D. 数据库系统
-答案：ABC</pre>
-      <p style="font-size:.75rem;color:#9ca3af;margin-top:8px;">
-        <span class="good">✔ 支持：</span>判断题(对/错)、单选题(A/B/C/D)、多选题(ABCD)<br>
-        <span class="good">✔ 答案标记：</span>"答案："、"Answer:"、"✔" 均可识别
-      </p>
+    <!-- Features -->
+    <div class="features">
+      <div class="feature-card">
+        <div class="icon">✅</div>
+        <h4>判断 / 单选 / 多选</h4>
+        <p>自动识别多种题型</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔀</div>
+        <h4>随机打乱</h4>
+        <p>题目和选项顺序随机</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📋</div>
+        <h4>错题复习</h4>
+        <p>自动收集错题反复刷</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔒</div>
+        <h4>本地运行</h4>
+        <p>数据不上传任何服务器</p>
+      </div>
     </div>
   </div>
 
@@ -714,6 +749,24 @@ function showPreview(questions, rawText, validCount) {
       <span style="margin-left:auto;font-size:.7rem;color:${hasAns ? '#22c55e' : '#f59e0b'}">${hasAns ? '✔' : '⚠️'}</span>
     </div>`;
   }).join('');
+}
+
+// ===================================================================
+// DEMO — 内置示例数据
+// ===================================================================
+
+function loadDemo() {
+  state.allQuestions = [
+    { id:1, type:'mc', quiz:'', text:'操作系统的核心功能是什么？', altText:'', options:[{label:'A',text:'文件管理'},{label:'B',text:'资源管理'},{label:'C',text:'进程管理'},{label:'D',text:'存储管理'}], answer:1, number:1 },
+    { id:2, type:'tf', quiz:'', text:'Linux 是一个开源操作系统。', altText:'', options:[{label:'A',text:'True'},{label:'B',text:'False'}], answer:0, number:2 },
+    { id:3, type:'mc', quiz:'', text:'1GB 等于多少 MB？', altText:'', options:[{label:'A',text:'100'},{label:'B',text:'512'},{label:'C',text:'1024'},{label:'D',text:'2048'}], answer:2, number:3 },
+    { id:4, type:'ma', quiz:'', text:'以下哪些属于操作系统？', altText:'', options:[{label:'A',text:'Windows'},{label:'B',text:'Linux'},{label:'C',text:'macOS'},{label:'D',text:'Photoshop'}], answer:[0,1,2], number:4 },
+    { id:5, type:'tf', quiz:'', text:'Python 是一种编译型语言。', altText:'', options:[{label:'A',text:'True'},{label:'B',text:'False'}], answer:1, number:5 },
+    { id:6, type:'mc', quiz:'', text:'CPU 的中文名称是什么？', altText:'', options:[{label:'A',text:'中央处理器'},{label:'B',text:'内存'},{label:'C',text:'硬盘'},{label:'D',text:'显卡'}], answer:0, number:6 },
+  ];
+  state.fileName = '示例题目';
+
+  showPreview(state.allQuestions, '', 6);
 }
 
 // ===================================================================
