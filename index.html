@@ -251,10 +251,10 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
       <input type="file" id="fileInput" accept=".docx">
     </div>
 
-    <!-- Try demo -->
+    <!-- Try demo & Wrong book -->
     <div class="demo-section">
-      <span style="font-size:.85rem;color:#9ca3af;">没有文档？</span>
       <button onclick="loadDemo()">🎯 试试示例题目</button>
+      <button id="wrongBtn" onclick="startWrongQuiz()" style="display:none;border-color:#ef4444;color:#ef4444;">📕 错题本 <span id="wrongCount"></span></button>
     </div>
 
     <!-- Features -->
@@ -606,13 +606,57 @@ const state = {
   wrongCount: 0,
   history: [],
   fileName: '',
-  startTime: null
+  startTime: null,
+  wrongMode: false  // 错题本模式
 };
 
 // ===================================================================
-// SCREEN MANAGEMENT
+// 错题本 — localStorage 持久化
 // ===================================================================
 
+const WRONG_KEY = 'quiz_tool_wrong';
+
+function getWrongQuestions() {
+  try { return JSON.parse(localStorage.getItem(WRONG_KEY)) || []; } catch(e) { return []; }
+}
+
+function saveWrongQuestions(qs) {
+  localStorage.setItem(WRONG_KEY, JSON.stringify(qs));
+}
+
+function addWrongFromRound() {
+  let wrong = getWrongQuestions();
+  state.history.forEach(h => {
+    if (!h.correct) {
+      const q = state.roundQuestions[h.index];
+      if (q && !wrong.some(w => w.text === q.text)) {
+        wrong.push(clone(q));
+      }
+    }
+  });
+  saveWrongQuestions(wrong);
+  updateWrongBtn();
+}
+
+function removeWrongFromBank(text) {
+  let wrong = getWrongQuestions();
+  wrong = wrong.filter(w => w.text !== text);
+  saveWrongQuestions(wrong);
+  updateWrongBtn();
+}
+
+function updateWrongBtn() {
+  const btn = document.getElementById('wrongBtn');
+  const count = getWrongQuestions().length;
+  if (count > 0) {
+    btn.style.display = 'inline-block';
+    document.getElementById('wrongCount').textContent = `(${count})`;
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+// 更新 showUpload：显示错题按钮
 function showUpload() {
   document.getElementById('uploadScreen').style.display = 'block';
   document.getElementById('loadingArea').style.display = 'none';
@@ -621,7 +665,9 @@ function showUpload() {
   document.getElementById('quizScreen').style.display = 'none';
   document.getElementById('quizArea').innerHTML = '';
   cleanupKeyboard();
+  updateWrongBtn();
 }
+
 
 function showError(msg) {
   document.getElementById('uploadScreen').style.display = 'none';
@@ -835,6 +881,30 @@ function applyFilters() {
   if (state.history.length > 0) {
     if (!confirm('切换筛选条件将重新开始，确定吗？')) return;
   }
+  startNewRound();
+}
+
+function startWrongQuiz() {
+  const wrong = getWrongQuestions();
+  if (wrong.length === 0) {
+    alert('错题本还是空的！做完题答错的会自动收录。');
+    return;
+  }
+
+  state.allQuestions = wrong;
+  state.fileName = '📕 错题本';
+  state.wrongMode = true;
+
+  document.getElementById('uploadScreen').style.display = 'none';
+  document.getElementById('previewArea').style.display = 'none';
+  document.getElementById('quizScreen').style.display = 'block';
+  document.getElementById('fileName').textContent = '📕 错题本 — 答对后自动移除';
+  document.getElementById('quizFilter').innerHTML = '<option value="all">全部</option>';
+  document.querySelectorAll('#typeFilters .type-filter-label').forEach(l => {
+    l.querySelector('input').checked = true;
+    l.style.opacity = '1';
+  });
+
   startNewRound();
 }
 
@@ -1070,6 +1140,11 @@ function submitAnswer() {
   if (isCorrect) state.correctCount++; else state.wrongCount++;
   state.history.push({ index: state.currentIndex, correct: isCorrect });
 
+  // 错题本模式：答对就移除
+  if (state.wrongMode && isCorrect) {
+    removeWrongFromBank(q.text);
+  }
+
   document.getElementById('submitBtn').style.display = 'none';
   document.getElementById('nextBtn').style.display = '';
   updateStats();
@@ -1112,17 +1187,26 @@ function renderSummary() {
   });
 
   const area = document.getElementById('quizArea');
+
+  // 自动存错题到错题本（非错题本模式）
+  if (!state.wrongMode && wrong > 0) addWrongFromRound();
+
+  // 错题本模式：看看还剩多少
+  const remainingWrong = state.wrongMode ? getWrongQuestions().length : 0;
+
   area.innerHTML = `<div class="summary-wrap question-card">
-    <h2>答题完成！</h2>
+    <h2>${state.wrongMode ? '📕 错题本' : '答题完成！'}</h2>
     <div class="score">${pct}%</div>
     <div class="sub">${correct} / ${total} 正确</div>
-    <div class="detail">${wrong} 道错误 · 用时 ${minLabel}</div>
+    <div class="detail">${state.wrongMode ? `已清除 ${correct} 道错题` : `${wrong} 道错误`} · 用时 ${minLabel}</div>
+    ${state.wrongMode && remainingWrong > 0 ? `<div style="margin-top:4px;color:#ef4444;font-size:.9rem;">还有 ${remainingWrong} 道错题未清除</div>` : ''}
+    ${state.wrongMode && remainingWrong === 0 ? `<div style="margin-top:4px;color:#22c55e;font-size:.9rem;font-weight:600;">🗑️ 错题本已清空！</div>` : ''}
     <div class="breakdown">${breakdown}</div>
     <div class="actions" style="justify-content:center;margin-top:20px;flex-wrap:wrap;">
-      ${wrong > 0 ? `<button onclick="reviewWrong()" style="padding:12px 24px;background:#ef4444;color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;"> 复习 ${wrong} 道错题</button>` : ''}
+      ${!state.wrongMode && wrong > 0 ? `<button onclick="reviewWrong()" style="padding:12px 24px;background:#ef4444;color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;"> 复习 ${wrong} 道错题</button>` : ''}
+      ${state.wrongMode && remainingWrong > 0 ? `<button onclick="shuffleAndRestart()" style="padding:12px 24px;background:#ef4444;color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;">🔄 继续刷错题</button>` : ''}
       <button onclick="shuffleAndRestart()" style="padding:12px 32px;background:#1a1a2e;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;"> 再来一轮</button>
       <button onclick="showUpload()" style="padding:12px 32px;background:#6b7280;color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;"> 换文档</button>
-      <button onclick="showDebug()" style="padding:8px 16px;background:transparent;color:#6b7280;border:1px solid #d1d5db;border-radius:8px;font-size:.75rem;cursor:pointer;"> 调试</button>
     </div>
   </div>`;
   updateProgress();
