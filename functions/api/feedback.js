@@ -18,9 +18,13 @@ export async function onRequest(context) {
     }
   }
 
-  // Check admin password for GET/DELETE
+  // Check admin password (from D1 settings table)
   const password = url.searchParams.get("password");
-  if (password !== env.ADMIN_PASSWORD) {
+  const { results: pwdResult } = await env.DB.prepare(
+    "SELECT value FROM settings WHERE key = 'admin_password'"
+  ).all();
+  const adminPassword = pwdResult[0]?.value;
+  if (!adminPassword || password !== adminPassword) {
     return new Response(JSON.stringify({ error: "密码错误" }), { status: 401, headers });
   }
 
