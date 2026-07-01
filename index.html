@@ -427,16 +427,15 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
     <div class="toolbar">
       <span class="file-name" id="fileName"></span>
       <div class="filters" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-        <select id="quizFilter" style="padding:6px 10px;border-radius:8px;border:1px solid #d1d5db;font-size:.8rem;background:#fff;"></select>
-        <span style="display:flex;gap:4px;" id="typeFilters">
-          <label class="type-filter-label" data-type="tf" style="font-size:.75rem;cursor:pointer;padding:4px 8px;border-radius:6px;background:#dbeafe;color:#1e40af;font-weight:600;user-select:none;"><input type="checkbox" checked hidden> 判断</label>
-          <label class="type-filter-label" data-type="mc" style="font-size:.75rem;cursor:pointer;padding:4px 8px;border-radius:6px;background:#d1fae5;color:#065f46;font-weight:600;user-select:none;"><input type="checkbox" checked hidden> 单选</label>
-          <label class="type-filter-label" data-type="ma" style="font-size:.75rem;cursor:pointer;padding:4px 8px;border-radius:6px;background:#fef3c7;color:#92400e;font-weight:600;user-select:none;"><input type="checkbox" checked hidden> 多选</label>
-          <label class="type-filter-label" data-type="fill" style="font-size:.75rem;cursor:pointer;padding:4px 8px;border-radius:6px;background:#f3e8ff;color:#6b21a8;font-weight:600;user-select:none;"><input type="checkbox" checked hidden> 填空</label>
+        <select id="quizFilter" style="padding:5px 8px;border-radius:6px;border:1px solid #d1d5db;font-size:.78rem;background:#fff;"></select>
+        <span style="display:flex;gap:4px;flex-wrap:wrap;" id="typeFilters">
+          <label class="type-filter-label" data-type="tf" style="font-size:.75rem;cursor:pointer;padding:4px 10px;border-radius:6px;background:#dbeafe;color:#1e40af;font-weight:600;user-select:none;display:flex;align-items:center;gap:4px;"><input type="checkbox" checked style="margin:0;width:13px;height:13px;accent-color:#4f46e5;"> 判断</label>
+          <label class="type-filter-label" data-type="mc" style="font-size:.75rem;cursor:pointer;padding:4px 10px;border-radius:6px;background:#d1fae5;color:#065f46;font-weight:600;user-select:none;display:flex;align-items:center;gap:4px;"><input type="checkbox" checked style="margin:0;width:13px;height:13px;accent-color:#4f46e5;"> 单选</label>
+          <label class="type-filter-label" data-type="ma" style="font-size:.75rem;cursor:pointer;padding:4px 10px;border-radius:6px;background:#fef3c7;color:#92400e;font-weight:600;user-select:none;display:flex;align-items:center;gap:4px;"><input type="checkbox" checked style="margin:0;width:13px;height:13px;accent-color:#4f46e5;"> 多选</label>
+          <label class="type-filter-label" data-type="fill" style="font-size:.75rem;cursor:pointer;padding:4px 10px;border-radius:6px;background:#f3e8ff;color:#6b21a8;font-weight:600;user-select:none;display:flex;align-items:center;gap:4px;"><input type="checkbox" checked style="margin:0;width:13px;height:13px;accent-color:#4f46e5;"> 填空</label>
         </span>
       </div>
       <span class="stats" id="statsDisplay">0 / 0</span>
-      <button onclick="applyFilters()" class="primary" style="padding:6px 14px;font-size:.8rem;">筛选</button>
       <button onclick="shuffleAndRestart()" class="primary" id="btnShuffle">打乱</button>
       <button onclick="showUpload()" class="danger">退出</button>
     </div>
@@ -949,7 +948,7 @@ function startWrongQuiz() {
   document.getElementById('previewArea').style.display = 'none';
   document.getElementById('quizScreen').style.display = 'block';
   document.getElementById('fileName').textContent = '📕 错题本 — 答对后自动移除';
-  document.getElementById('quizFilter').innerHTML = '<option value="all">全部</option>';
+  populateFilters();
   document.querySelectorAll('#typeFilters .type-filter-label').forEach(l => {
     l.querySelector('input').checked = true;
     l.style.opacity = '1';
@@ -982,17 +981,21 @@ function populateFilters() {
     const opt = document.createElement('option');
     opt.value = q; opt.textContent = q; sel.appendChild(opt);
   });
-  document.querySelectorAll('#typeFilters .type-filter-label').forEach(l => {
-    l.onclick = function() {
-      const cb = this.querySelector('input');
-      cb.checked = !cb.checked;
-      this.style.opacity = cb.checked ? '1' : '.4';
+  // 点击类型复选框或切换单元 → 立即重新筛选
+  document.querySelectorAll('#typeFilters .type-filter-label input').forEach(cb => {
+    cb.onchange = function() {
+      const label = this.closest('.type-filter-label');
+      label.style.opacity = this.checked ? '1' : '.4';
+      applyFilters();
     };
   });
+  sel.onchange = () => applyFilters();
 }
 
 function applyFilters() {
-  if (state.history.length > 0 && !confirm('切换筛选条件将重新开始，确定吗？')) return;
+  if (state.history.length > 0) {
+    // 直接重新开始，不弹确认
+  }
   startNewRound();
 }
 
