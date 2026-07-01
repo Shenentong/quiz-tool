@@ -34,12 +34,30 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
   padding: 50px 40px; text-align: center; cursor: pointer;
   transition: all .2s; max-width: 560px; margin: 0 auto;
 }
-.upload-area-v2:hover, .upload-area-v2.dragover { border-color: #4f46e5; background: #f8faff; }
+.upload-area-v2:hover, .upload-area-v2.dragover { border-color: #4f46e5; background: #f8faff; transform: scale(1.02); box-shadow: 0 0 0 8px rgba(79,70,229,.1); }
 .upload-area-v2 .icon { width: 64px; height: 64px; border-radius: 16px; background: #eef2ff; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 1.6rem; }
 .upload-area-v2 h2 { font-size: 1.2rem; color: #1a1a2e; margin-bottom: 4px; }
 .upload-area-v2 p { color: #6b7280; font-size: .9rem; }
 .upload-area-v2 .hint { margin-top: 12px; font-size: .8rem; color: #9ca3af; }
 .upload-area-v2 input[type="file"] { display: none; }
+
+/* 全页拖拽覆盖层 */
+.global-drop-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(79,70,229,.12); z-index: 9999;
+  display: none; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.global-drop-overlay.show { display: flex; }
+.global-drop-overlay .drop-hint {
+  background: #fff; border: 4px dashed #4f46e5; border-radius: 24px;
+  padding: 48px 56px; text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  animation: popIn .3s ease;
+}
+.global-drop-overlay .drop-hint .icon { font-size: 4rem; margin-bottom: 12px; }
+.global-drop-overlay .drop-hint h2 { font-size: 1.3rem; color: #1a1a2e; margin-bottom: 4px; }
+.global-drop-overlay .drop-hint p { color: #6b7280; font-size: .9rem; }
 .demo-section { text-align: center; margin-top: 20px; }
 .demo-section button {
   padding: 10px 24px; border-radius: 10px; border: 2px solid #e5e7eb;
@@ -274,6 +292,15 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
 </head>
 <body>
 
+<!-- 全页拖拽覆盖层 -->
+<div class="global-drop-overlay" id="globalDropOverlay">
+  <div class="drop-hint">
+    <div class="icon">📥</div>
+    <h2>松开以导入题目</h2>
+    <p>支持 .docx / .txt 文件</p>
+  </div>
+</div>
+
 <header>
   <h1> 刷题工具</h1>
   <p>上传 Word 文档，自动生成刷题页面</p>
@@ -291,9 +318,9 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
       <div class="upload-area-v2" id="dropZone">
         <div class="icon">📄</div>
         <h2>上传新课程</h2>
-        <p>上传 Word 文档，自动生成刷题页面</p>
-        <div class="hint">支持 .docx 格式 · 本地处理，不上传服务器</div>
-        <input type="file" id="fileInput" accept=".docx">
+        <p>拖拽文件到此处或页面任意位置，自动生成刷题页面</p>
+        <div class="hint">支持 .docx / .txt / .md / .csv · 本地处理，不上传服务器</div>
+        <input type="file" id="fileInput" accept=".docx,.txt,.md,.csv">
       </div>
       <div class="demo-section" style="margin-top:12px;">
         <button onclick="loadDemo()">🎯 示例题目</button>
@@ -304,7 +331,7 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
       <div style="display:flex;flex-wrap:wrap;gap:8px;">
         <span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;color:#374151;">按 <b>1 2 3 4</b> 选选项</span>
         <span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;color:#374151;">按 <b>Enter</b> 提交 / 下一题</span>
-        <span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;color:#374151;">答题后自动播放 <b>音效</b> 和 <b>动画</b></span>
+        <span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;color:#374151;">拖拽文件到 <b>任意位置</b> 即可导入</span>
       </div>
     </div>
   </div>
@@ -793,18 +820,56 @@ fileInput.addEventListener('change', (e) => {
   if (e.target.files.length > 0) handleFile(e.target.files[0]);
 });
 
-// Drag and drop
-dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+// Drag and drop on the upload area
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
 dropZone.addEventListener('drop', (e) => {
-  e.preventDefault();
+  e.preventDefault(); e.stopPropagation();
   dropZone.classList.remove('dragover');
+  document.getElementById('globalDropOverlay').classList.remove('show');
   if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
 });
 
+// ===================================================================
+// 全页面拖拽 — 任意位置拖入文件即可导入
+// ===================================================================
+
+const globalOverlay = document.getElementById('globalDropOverlay');
+let dragCounter = 0;
+
+document.addEventListener('dragenter', (e) => {
+  e.preventDefault();
+  dragCounter++;
+  if (dragCounter === 1) globalOverlay.classList.add('show');
+});
+
+document.addEventListener('dragover', (e) => {
+  e.preventDefault();
+});
+
+document.addEventListener('dragleave', (e) => {
+  dragCounter--;
+  if (dragCounter === 0) globalOverlay.classList.remove('show');
+});
+
+document.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dragCounter = 0;
+  globalOverlay.classList.remove('show');
+  if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+});
+
+// ===================================================================
+// FILE HANDLER — 支持 .docx 和 .txt
+// ===================================================================
+
 async function handleFile(file) {
-  if (!file.name.endsWith('.docx')) {
-    showError('请上传 .docx 格式的 Word 文档');
+  const name = file.name.toLowerCase();
+  const isDocx = name.endsWith('.docx');
+  const isTxt = name.endsWith('.txt') || name.endsWith('.md') || name.endsWith('.csv');
+
+  if (!isDocx && !isTxt) {
+    showError('请上传 .docx / .txt / .md / .csv 格式的文件');
     return;
   }
 
@@ -814,9 +879,15 @@ async function handleFile(file) {
   document.getElementById('errorArea').style.display = 'none';
 
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.extractRawText({ arrayBuffer });
-    const rawText = result.value;
+    let rawText = '';
+
+    if (isDocx) {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      rawText = result.value;
+    } else {
+      rawText = await file.text();
+    }
 
     if (!rawText.trim()) {
       showError('未能从文档中提取到文本内容，请检查文档是否为空。');
