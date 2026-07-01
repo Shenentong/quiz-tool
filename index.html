@@ -360,6 +360,16 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
 }
 .score-pop.correct-score { color: #22c55e; }
 .score-pop.wrong-score { color: #ef4444; }
+
+/* 音效/动画开关 */
+.settings-toggle {
+  padding: 6px 10px; border-radius: 8px; border: 1px solid #d1d5db;
+  font-size: .8rem; cursor: pointer; background: #fff; transition: all .15s;
+  white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;
+}
+.settings-toggle.on { background: #eef2ff; border-color: #4f46e5; color: #4f46e5; }
+.settings-toggle.off { background: #f9fafb; border-color: #e5e7eb; color: #9ca3af; }
+
 .type-filter-label { transition: opacity .15s, transform .1s; cursor: pointer; }
 .type-filter-label:hover { opacity: .85 !important; transform: translateY(-1px); }
 .type-filter-label:active { transform: translateY(0); }
@@ -437,6 +447,8 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
       </div>
       <span class="stats" id="statsDisplay">0 / 0</span>
       <button onclick="shuffleAndRestart()" class="primary" id="btnShuffle">打乱</button>
+      <button class="settings-toggle on" id="soundToggle" onclick="toggleSound()" title="音效开关">🔊</button>
+      <button class="settings-toggle on" id="animToggle" onclick="toggleAnim()" title="动画开关">✨</button>
       <button onclick="showUpload()" class="danger">退出</button>
     </div>
     <div class="progress-wrap">
@@ -714,6 +726,41 @@ const state = {
   startTime: null,
   wrongMode: false  // 错题本模式
 };
+
+// ===================================================================
+// 音效 & 动画开关 — localStorage 持久化
+// ===================================================================
+
+const SOUND_KEY = 'quiz_tool_sound';
+const ANIM_KEY = 'quiz_tool_anim';
+
+function getSetting(key, def) {
+  try { const v = localStorage.getItem(key); return v === null ? def : v === 'true'; }
+  catch(e) { return def; }
+}
+function setSetting(key, val) { try { localStorage.setItem(key, val); } catch(e) {} }
+
+let soundOn = getSetting(SOUND_KEY, true);
+let animOn = getSetting(ANIM_KEY, true);
+
+function updateToggleUI() {
+  const sBtn = document.getElementById('soundToggle');
+  const aBtn = document.getElementById('animToggle');
+  if (sBtn) { sBtn.textContent = soundOn ? '🔊' : '🔇'; sBtn.className = 'settings-toggle ' + (soundOn ? 'on' : 'off'); }
+  if (aBtn) { aBtn.textContent = animOn ? '✨' : '💤'; aBtn.className = 'settings-toggle ' + (animOn ? 'on' : 'off'); }
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+  setSetting(SOUND_KEY, soundOn);
+  updateToggleUI();
+}
+
+function toggleAnim() {
+  animOn = !animOn;
+  setSetting(ANIM_KEY, animOn);
+  updateToggleUI();
+}
 
 // ===================================================================
 // 错题本 — localStorage 持久化
@@ -1247,15 +1294,19 @@ function triggerCardEffect(isCorrect) {
 }
 
 function triggerFeedback(isCorrect) {
-  if (isCorrect) playCorrectSound(); else playWrongSound();
-  showFeedbackOverlay(isCorrect);
-  triggerCardEffect(isCorrect);
-  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-  if (isCorrect) { spawnConfetti(cx, cy - 60); spawnParticles(cx, cy, true); }
-  else { spawnParticles(cx, cy, false); }
-  const card = document.querySelector('.question-card');
-  if (card) { const r = card.getBoundingClientRect(); showScorePop(r.left + r.width/2, r.top, isCorrect); }
-  else { showScorePop(cx, cy - 100, isCorrect); }
+  if (soundOn) {
+    if (isCorrect) playCorrectSound(); else playWrongSound();
+  }
+  if (animOn) {
+    showFeedbackOverlay(isCorrect);
+    triggerCardEffect(isCorrect);
+    const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+    if (isCorrect) { spawnConfetti(cx, cy - 60); spawnParticles(cx, cy, true); }
+    else { spawnParticles(cx, cy, false); }
+    const card = document.querySelector('.question-card');
+    if (card) { const r = card.getBoundingClientRect(); showScorePop(r.left + r.width/2, r.top, isCorrect); }
+    else { showScorePop(cx, cy - 100, isCorrect); }
+  }
 }
 
 function submitAnswer() {
@@ -1530,6 +1581,7 @@ function updateStats() {
 // ===================================================================
 
 showUpload();
+updateToggleUI();
 </script>
 </body>
 </html>
