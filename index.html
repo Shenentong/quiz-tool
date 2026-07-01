@@ -38,34 +38,18 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
 .upload-area .supported { margin-top: 20px; font-size: .75rem; color: #9ca3af; }
 
 /* Format Guide */
-.steps { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; }
-.step { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 99px; font-size: .85rem; font-weight: 500; color: #9ca3af; background: #f3f4f6; }
-.step.active { background: #eef2ff; color: #4f46e5; }
-.step .num { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; background: #d1d5db; color: #fff; }
-.step.active .num { background: #4f46e5; }
-.upload-area-v2 {
-  background: #fff; border: 3px dashed #d1d5db; border-radius: 20px;
-  padding: 50px 40px; text-align: center; cursor: pointer;
-  transition: all .2s; max-width: 560px; margin: 0 auto;
+.format-guide {
+  max-width: 600px; margin: 24px auto 0; background: #fff;
+  border-radius: 14px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,.08);
 }
-.upload-area-v2:hover, .upload-area-v2.dragover { border-color: #4f46e5; background: #f8faff; }
-.upload-area-v2 .icon { width: 64px; height: 64px; border-radius: 16px; background: #eef2ff; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 1.6rem; }
-.upload-area-v2 h2 { font-size: 1.2rem; color: #1a1a2e; margin-bottom: 4px; }
-.upload-area-v2 p { color: #6b7280; font-size: .9rem; }
-.upload-area-v2 .hint { margin-top: 12px; font-size: .8rem; color: #9ca3af; }
-.upload-area-v2 input[type="file"] { display: none; }
-.demo-section { text-align: center; margin-top: 20px; }
-.demo-section button {
-  padding: 10px 24px; border-radius: 10px; border: 2px solid #e5e7eb;
-  font-size: .9rem; font-weight: 600; cursor: pointer; transition: all .15s;
-  background: #fff; color: #374151;
+.format-guide h3 { font-size: .9rem; color: #374151; margin-bottom: 10px; }
+.format-guide pre {
+  background: #f8f9fb; border-radius: 8px; padding: 12px 16px;
+  font-size: .75rem; line-height: 1.5; overflow-x: auto; color: #374151;
+  border: 1px solid #e5e7eb;
 }
-.demo-section button:hover { border-color: #4f46e5; color: #4f46e5; background: #f8faff; }
-.features { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px; max-width: 640px; margin-left: auto; margin-right: auto; }
-.feature-card { background: #fff; border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 130px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-.feature-card .icon { font-size: 1.5rem; margin-bottom: 6px; }
-.feature-card h4 { font-size: .85rem; color: #1a1a2e; margin-bottom: 2px; }
-.feature-card p { font-size: .75rem; color: #9ca3af; }
+.format-guide .good { color: #059669; font-weight: 600; }
+.format-guide .bad { color: #dc2626; font-weight: 600; }
 
 /* Loading */
 .loading-area { text-align: center; padding: 60px 20px; display: none; }
@@ -193,11 +177,6 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
 .summary-wrap .breakdown-item .q-preview { flex: 1; color: #374151; }
 .summary-wrap .breakdown-item .q-preview .en { color: #9ca3af; font-size: .75rem; }
 
-/* Filter label styles */
-.type-filter-label { transition: opacity .15s, transform .1s; }
-.type-filter-label:hover { opacity: .85 !important; transform: translateY(-1px); }
-.type-filter-label:active { transform: translateY(0); }
-
 /* Responsive */
 @media (max-width: 600px) {
   .container { padding: 10px; }
@@ -205,7 +184,6 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
   .upload-area { padding: 40px 20px; }
   .toolbar { flex-direction: column; align-items: stretch; }
   .toolbar .file-name { margin-right: 0; }
-  .toolbar .filters { flex-wrap: wrap; }
   .preview-area .actions { flex-direction: column; }
 }
 
@@ -220,6 +198,89 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
 .parsed-item .num { color: #4f46e5; font-weight: 600; min-width: 30px; }
 .parsed-item .type-badge { font-size: .65rem; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
 .parsed-item .preview { color: #6b7280; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ===== 动画反馈 / Animation Feedback ===== */
+/* 卡片抖动 */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+.question-card.shaking { animation: shake .5s ease; }
+
+/* 卡片弹跳（正确时） */
+@keyframes bouncePop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.03); }
+  70% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+.question-card.pop { animation: bouncePop .4s ease; }
+
+/* 中央大型反馈图标 */
+.feedback-overlay {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
+  font-size: 12rem; z-index: 999; pointer-events: none;
+  transition: none; opacity: 0;
+}
+.feedback-overlay.show {
+  animation: popFade .9s ease forwards;
+}
+@keyframes popFade {
+  0% { transform: translate(-50%,-50%) scale(0); opacity: 1; }
+  30% { transform: translate(-50%,-50%) scale(1.3); opacity: 1; }
+  70% { transform: translate(-50%,-50%) scale(1); opacity: .8; }
+  100% { transform: translate(-50%,-50%) scale(1.5); opacity: 0; }
+}
+.feedback-overlay.correct { color: #22c55e; text-shadow: 0 0 80px rgba(34,197,94,.5); }
+.feedback-overlay.wrong { color: #ef4444; text-shadow: 0 0 80px rgba(239,68,68,.5); }
+
+/* 粒子 */
+.particle {
+  position: fixed; pointer-events: none; z-index: 998;
+  font-size: 1.5rem; animation: particleFly .7s ease-out forwards;
+}
+@keyframes particleFly {
+  0% { opacity: 1; transform: translate(0,0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
+}
+
+/* 彩带/纸屑 (正确时) */
+.confetti-piece {
+  position: fixed; pointer-events: none; z-index: 998;
+  width: 10px; height: 10px; border-radius: 2px;
+  animation: confettiFall 1.5s ease-out forwards;
+}
+@keyframes confettiFall {
+  0% { opacity: 1; transform: translate(0,0) rotate(0deg) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0); }
+}
+
+/* 正确闪光边框 */
+.question-card.flash-correct {
+  box-shadow: 0 0 0 4px #22c55e, 0 0 30px rgba(34,197,94,.3), 0 4px 20px rgba(0,0,0,.12);
+  transition: box-shadow .3s ease;
+}
+.question-card.flash-wrong {
+  box-shadow: 0 0 0 4px #ef4444, 0 0 30px rgba(239,68,68,.3), 0 4px 20px rgba(0,0,0,.12);
+  transition: box-shadow .3s ease;
+}
+
+/* 得分弹出 */
+.score-pop {
+  position: fixed; pointer-events: none; z-index: 999;
+  font-size: 1.8rem; font-weight: 800;
+  animation: scoreUp 1s ease-out forwards;
+}
+@keyframes scoreUp {
+  0% { opacity: 1; transform: translateY(0) scale(.5); }
+  30% { opacity: 1; transform: translateY(-20px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-60px) scale(1); }
+}
+.score-pop.correct-score { color: #22c55e; }
+.score-pop.wrong-score { color: #ef4444; }
 </style>
 </head>
 <body>
@@ -233,52 +294,33 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
 
   <!-- ============ UPLOAD SCREEN ============ -->
   <div id="uploadScreen">
-    <!-- Step indicator -->
-    <div class="steps">
-      <div class="step active"><span class="num">1</span> 上传文档</div>
-      <span style="color:#d1d5db;">→</span>
-      <div class="step"><span class="num">2</span> 预览题目</div>
-      <span style="color:#d1d5db;">→</span>
-      <div class="step"><span class="num">3</span> 开始刷题</div>
-    </div>
-
-    <!-- Upload area -->
-    <div class="upload-area-v2" id="dropZone">
-      <div class="icon">📄</div>
+    <div class="upload-area" id="dropZone">
+      <div class="icon"> + </div>
       <h2>上传复习文档</h2>
-      <p>把你的 Word 复习资料拖到这里，或点击选择文件</p>
-      <div class="hint">支持 .docx 格式 · 文档仅在本地处理，不会上传到任何服务器</div>
+      <p>拖拽 Word 文档到此处，或点击选择文件</p>
+      <div class="hint">支持 .docx 格式</div>
+      <div class="supported">文档仅在本地浏览器处理，不会上传到任何服务器</div>
       <input type="file" id="fileInput" accept=".docx">
     </div>
 
-    <!-- Try demo -->
-    <div class="demo-section">
-      <span style="font-size:.85rem;color:#9ca3af;">没有文档？</span>
-      <button onclick="loadDemo()">🎯 试试示例题目</button>
-    </div>
+    <div class="format-guide">
+      <h3> 文档格式建议</h3>
+      <p style="font-size:.8rem;color:#6b7280;margin-bottom:8px;">为了让工具准确识别题目，建议文档结构如下：</p>
+      <pre>
+1. 操作系统的核心功能是什么？
+A. 文件管理  B. 资源管理  C. 进程管理  D. 存储管理
+答案：B
 
-    <!-- Features -->
-    <div class="features">
-      <div class="feature-card">
-        <div class="icon">✅</div>
-        <h4>判断 / 单选 / 多选</h4>
-        <p>自动识别多种题型</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">🔀</div>
-        <h4>随机打乱</h4>
-        <p>题目和选项顺序随机</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">📋</div>
-        <h4>错题复习</h4>
-        <p>自动收集错题反复刷</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">🔒</div>
-        <h4>本地运行</h4>
-        <p>数据不上传任何服务器</p>
-      </div>
+2. Linux 是多用户操作系统。
+答案：对
+
+3. 以下哪些属于操作系统类型？（多选）
+A. 批处理系统  B. 实时系统  C. 分时系统  D. 数据库系统
+答案：ABC</pre>
+      <p style="font-size:.75rem;color:#9ca3af;margin-top:8px;">
+        <span class="good">✔ 支持：</span>判断题(对/错)、单选题(A/B/C/D)、多选题(ABCD)<br>
+        <span class="good">✔ 答案标记：</span>"答案："、"Answer:"、"✔" 均可识别
+      </p>
     </div>
   </div>
 
@@ -311,18 +353,8 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
   <div id="quizScreen" style="display:none">
     <div class="toolbar">
       <span class="file-name" id="fileName"></span>
-      <div class="filters" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-        <select id="quizFilter" style="padding:6px 10px;border-radius:8px;border:1px solid #d1d5db;font-size:.8rem;background:#fff;"></select>
-        <span style="display:flex;gap:4px;" id="typeFilters">
-          <label class="type-filter-label" data-type="tf" style="font-size:.75rem;cursor:pointer;padding:4px 8px;border-radius:6px;background:#dbeafe;color:#1e40af;font-weight:600;user-select:none;"><input type="checkbox" checked hidden> 判断</label>
-          <label class="type-filter-label" data-type="mc" style="font-size:.75rem;cursor:pointer;padding:4px 8px;border-radius:6px;background:#d1fae5;color:#065f46;font-weight:600;user-select:none;"><input type="checkbox" checked hidden> 单选</label>
-          <label class="type-filter-label" data-type="ma" style="font-size:.75rem;cursor:pointer;padding:4px 8px;border-radius:6px;background:#fef3c7;color:#92400e;font-weight:600;user-select:none;"><input type="checkbox" checked hidden> 多选</label>
-          <label class="type-filter-label" data-type="fill" style="font-size:.75rem;cursor:pointer;padding:4px 8px;border-radius:6px;background:#f3e8ff;color:#6b21a8;font-weight:600;user-select:none;"><input type="checkbox" checked hidden> 填空</label>
-        </span>
-      </div>
       <span class="stats" id="statsDisplay">0 / 0</span>
-      <button onclick="applyFilters()" class="primary" style="padding:6px 14px;font-size:.8rem;"> 筛选</button>
-      <button onclick="shuffleAndRestart()" class="primary" id="btnShuffle"> 打乱</button>
+      <button onclick="shuffleAndRestart()" class="primary" id="btnShuffle"> 打乱重来</button>
       <button onclick="showUpload()" class="danger"> 退出</button>
     </div>
     <div class="progress-wrap">
@@ -363,7 +395,6 @@ function parseQuestions(rawText) {
   const questions = [];
   let current = null;
   let currentType = null;
-  let currentQuiz = ''; // quiz/section name
   let qnum = 0;
   let inAlt = false;
   let pendingAnswer = null; // accumulate multi-line answers
@@ -402,7 +433,6 @@ function parseQuestions(rawText) {
       id: questions.length + 1,
       number: current.number,
       type: current.type,
-      quiz: currentQuiz,
       text: current.text.trim(),
       altText: current.altText.trim(),
       options: current.options,
@@ -417,13 +447,6 @@ function parseQuestions(rawText) {
 
     // Separator lines
     if (/^[─━═▬█\-*=•○●❤️▶◆◇]{3,}$/.test(line)) { continue; }
-
-    // Quiz/section detection (单元/章节)
-    const quizMatch = line.match(/^(Quiz\s*\d+[—:\s][^█▬]{0,60}|第[一二三四五六七八九十百零]+[章节部分课]|Unit\s*\d+|Chapter\s*\d+)/i);
-    if (quizMatch) {
-      currentQuiz = quizMatch[1].trim();
-      continue;
-    }
 
     // Section headers — detect type
     const zhSec = line.match(/[一二三四五六七八九十百]+[、．.\s]\s*(判断|单选|多选|填空|简答|名词解释)/);
@@ -610,6 +633,193 @@ const state = {
 };
 
 // ===================================================================
+// 音效 & 动画系统 / Audio & Animation System
+// ===================================================================
+
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
+
+// 播放正确音效 — 上行双音节"叮咚"
+function playCorrectSound() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+
+    // 第一音: C5 (523Hz) — 清脆叮声
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(523, now);
+    osc1.frequency.setValueAtTime(659, now + .06); // 滑到 E5
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(.3, now + .02);
+    gain1.gain.linearRampToValueAtTime(.15, now + .15);
+    gain1.gain.exponentialRampToValueAtTime(.001, now + .4);
+    osc1.connect(gain1); gain1.connect(ctx.destination);
+    osc1.start(now); osc1.stop(now + .4);
+
+    // 第二音: E5 (659Hz) — 稍后响起，更高
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(659, now + .12);
+    osc2.frequency.setValueAtTime(784, now + .18);
+    gain2.gain.setValueAtTime(0, now);
+    gain2.gain.linearRampToValueAtTime(.25, now + .14);
+    gain2.gain.linearRampToValueAtTime(.12, now + .25);
+    gain2.gain.exponentialRampToValueAtTime(.001, now + .5);
+    osc2.connect(gain2); gain2.connect(ctx.destination);
+    osc2.start(now + .12); osc2.stop(now + .5);
+  } catch(e) {}
+}
+
+// 播放错误音效 — 下行"嗡嗡"
+function playWrongSound() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+
+    // 低频闷响
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'triangle';
+    osc1.frequency.setValueAtTime(300, now);
+    osc1.frequency.linearRampToValueAtTime(200, now + .2);
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(.2, now + .03);
+    gain1.gain.exponentialRampToValueAtTime(.001, now + .35);
+    osc1.connect(gain1); gain1.connect(ctx.destination);
+    osc1.start(now); osc1.stop(now + .35);
+
+    // 第二声稍后 — 更低
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(250, now + .15);
+    osc2.frequency.linearRampToValueAtTime(160, now + .35);
+    gain2.gain.setValueAtTime(0, now);
+    gain2.gain.linearRampToValueAtTime(.15, now + .18);
+    gain2.gain.exponentialRampToValueAtTime(.001, now + .5);
+    osc2.connect(gain2); gain2.connect(ctx.destination);
+    osc2.start(now + .15); osc2.stop(now + .5);
+  } catch(e) {}
+}
+
+// 弹出大型反馈图标 (✓ 或 ✗)
+function showFeedbackOverlay(isCorrect) {
+  const el = document.createElement('div');
+  el.className = 'feedback-overlay ' + (isCorrect ? 'correct' : 'wrong');
+  el.textContent = isCorrect ? '✓' : '✗';
+  document.body.appendChild(el);
+  // 触发动画
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => el.remove(), 1000);
+}
+
+// 粒子爆发
+function spawnParticles(x, y, isCorrect) {
+  const emojis = isCorrect
+    ? ['⭐','✨','🌟','💚','🎉','💯']
+    : ['💢','💔','😢'];
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 40 + Math.random() * 80;
+    p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    p.style.setProperty('--dy', Math.sin(angle) * dist - 30 + 'px');
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 800);
+  }
+}
+
+// 彩纸屑 (正确时)
+function spawnConfetti(x, y) {
+  const colors = ['#22c55e','#4f46e5','#f59e0b','#ef4444','#3b82f6','#ec4899','#14b8a6'];
+  for (let i = 0; i < 20; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = x + 'px';
+    piece.style.top = y + 'px';
+    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.width = (6 + Math.random() * 10) + 'px';
+    piece.style.height = (6 + Math.random() * 10) + 'px';
+    const angle = -Math.PI/2 + (Math.random() - .5) * Math.PI; // mostly upward
+    const dist = 50 + Math.random() * 150;
+    piece.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    piece.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+    piece.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 1600);
+  }
+}
+
+// 分数弹出文字
+function showScorePop(x, y, isCorrect) {
+  const el = document.createElement('div');
+  el.className = 'score-pop ' + (isCorrect ? 'correct-score' : 'wrong-score');
+  el.textContent = isCorrect ? '+1 ✓' : '+0 ✗';
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1100);
+}
+
+// 触发卡片动效
+function triggerCardEffect(isCorrect) {
+  const card = document.querySelector('.question-card');
+  if (!card) return;
+  if (isCorrect) {
+    card.classList.add('flash-correct', 'pop');
+    setTimeout(() => { card.classList.remove('flash-correct', 'pop'); }, 500);
+  } else {
+    card.classList.add('flash-wrong', 'shaking');
+    setTimeout(() => { card.classList.remove('flash-wrong', 'shaking'); }, 600);
+  }
+}
+
+// 主入口 — 根据答题结果触发全套反馈
+function triggerFeedback(isCorrect) {
+  // 音效
+  if (isCorrect) playCorrectSound();
+  else playWrongSound();
+
+  // 中央大图标
+  showFeedbackOverlay(isCorrect);
+
+  // 卡片动效
+  triggerCardEffect(isCorrect);
+
+  // 粒子 & 纸屑
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+  if (isCorrect) {
+    spawnConfetti(cx, cy - 60);
+    spawnParticles(cx, cy, true);
+  } else {
+    spawnParticles(cx, cy, false);
+  }
+
+  // 分数弹出（从卡片位置）
+  const card = document.querySelector('.question-card');
+  if (card) {
+    const rect = card.getBoundingClientRect();
+    showScorePop(rect.left + rect.width / 2, rect.top, isCorrect);
+  } else {
+    showScorePop(cx, cy - 100, isCorrect);
+  }
+}
+
+// ===================================================================
 // SCREEN MANAGEMENT
 // ===================================================================
 
@@ -619,7 +829,6 @@ function showUpload() {
   document.getElementById('errorArea').style.display = 'none';
   document.getElementById('previewArea').style.display = 'none';
   document.getElementById('quizScreen').style.display = 'none';
-  document.getElementById('quizArea').innerHTML = '';
   cleanupKeyboard();
 }
 
@@ -722,18 +931,8 @@ function showPreview(questions, rawText, validCount) {
   if (maCount) typeLabels.push(`多选 ${maCount}题`);
   if (fillCount) typeLabels.push(`填空 ${fillCount}题`);
 
-  // Quiz/section breakdown
-  const quizMap = {};
-  questions.forEach(q => {
-    const key = q.quiz || '未分类';
-    if (!quizMap[key]) quizMap[key] = 0;
-    quizMap[key]++;
-  });
-  const quizLabels = Object.entries(quizMap).map(([name, count]) => `${name} ${count}题`);
-
   document.getElementById('previewSummary').innerHTML =
     `共识别 <strong>${total}</strong> 道题（${typeLabels.join('，')}）` +
-    (quizLabels.length > 1 ? `<br><span style="font-size:.8rem;color:#6b7280;">${quizLabels.join(' · ')}</span>` : '') +
     (validCount < total ? ` · <span style="color:#f59e0b;">${total - validCount} 道题未识别到答案</span>` : '');
 
   // List parsed questions
@@ -753,25 +952,6 @@ function showPreview(questions, rawText, validCount) {
 }
 
 // ===================================================================
-// DEMO — 内置示例数据
-// ===================================================================
-
-function loadDemo() {
-  state.allQuestions = [
-    { id:1, type:'mc', quiz:'', text:'操作系统的核心功能是什么？', altText:'', options:[{label:'A',text:'文件管理'},{label:'B',text:'资源管理'},{label:'C',text:'进程管理'},{label:'D',text:'存储管理'}], answer:1, number:1 },
-    { id:2, type:'tf', quiz:'', text:'Linux 是一个开源操作系统。', altText:'', options:[{label:'A',text:'True'},{label:'B',text:'False'}], answer:0, number:2 },
-    { id:3, type:'mc', quiz:'', text:'1GB 等于多少 MB？', altText:'', options:[{label:'A',text:'100'},{label:'B',text:'512'},{label:'C',text:'1024'},{label:'D',text:'2048'}], answer:2, number:3 },
-    { id:4, type:'ma', quiz:'', text:'以下哪些属于操作系统？', altText:'', options:[{label:'A',text:'Windows'},{label:'B',text:'Linux'},{label:'C',text:'macOS'},{label:'D',text:'Photoshop'}], answer:[0,1,2], number:4 },
-    { id:5, type:'tf', quiz:'', text:'Python 是一种编译型语言。', altText:'', options:[{label:'A',text:'True'},{label:'B',text:'False'}], answer:1, number:5 },
-    { id:6, type:'mc', quiz:'', text:'CPU 的中文名称是什么？', altText:'', options:[{label:'A',text:'中央处理器'},{label:'B',text:'内存'},{label:'C',text:'硬盘'},{label:'D',text:'显卡'}], answer:0, number:6 },
-  ];
-  state.fileName = '示例题目';
-
-  document.getElementById('uploadScreen').style.display = 'none';
-  showPreview(state.allQuestions, '', 6);
-}
-
-// ===================================================================
 // QUIZ ENGINE
 // ===================================================================
 
@@ -780,81 +960,21 @@ function startQuiz() {
   document.getElementById('quizScreen').style.display = 'block';
   document.getElementById('fileName').textContent = '' + state.fileName;
 
-  populateFilters();
-  startNewRound();
-}
-
-function getFilteredQuestions() {
-  // Apply quiz filter
-  const quizVal = document.getElementById('quizFilter').value;
-  let pool = state.allQuestions;
-  if (quizVal !== 'all') {
-    pool = pool.filter(q => q.quiz === quizVal);
-  }
-
-  // Apply type filters
-  const checkedTypes = [];
-  document.querySelectorAll('#typeFilters .type-filter-label').forEach(label => {
-    if (label.querySelector('input').checked) {
-      checkedTypes.push(label.dataset.type);
-    }
-  });
-  if (checkedTypes.length > 0 && checkedTypes.length < 4) {
-    pool = pool.filter(q => checkedTypes.includes(q.type));
-  }
-
-  return pool;
-}
-
-function populateFilters() {
-  // Quiz dropdown
-  const quizSet = new Set();
-  state.allQuestions.forEach(q => {
-    if (q.quiz) quizSet.add(q.quiz);
-  });
-  const select = document.getElementById('quizFilter');
-  select.innerHTML = '<option value="all">全部单元</option>';
-  [...quizSet].sort().forEach(q => {
-    const opt = document.createElement('option');
-    opt.value = q;
-    opt.textContent = q;
-    select.appendChild(opt);
-  });
-
-  // Type filter click toggles
-  document.querySelectorAll('#typeFilters .type-filter-label').forEach(label => {
-    label.onclick = function() {
-      const cb = this.querySelector('input');
-      cb.checked = !cb.checked;
-      this.style.opacity = cb.checked ? '1' : '.4';
-    };
-  });
-}
-
-function applyFilters() {
-  if (state.history.length > 0) {
-    if (!confirm('切换筛选条件将重新开始，确定吗？')) return;
-  }
   startNewRound();
 }
 
 function startNewRound() {
   cleanupKeyboard();
-  const pool = getFilteredQuestions();
-  if (pool.length === 0) {
-    document.getElementById('quizArea').innerHTML =
-      '<div class="question-card" style="text-align:center;padding:40px;color:#6b7280;">没有符合条件的题目。<br>请调整筛选条件后点击「筛选」按钮。</div>';
-    return;
-  }
-  const questions = clone(pool);
+  const questions = clone(state.allQuestions);
   shuffle(questions);
 
-  // Shuffle options within each question
+  // Shuffle options within each question (but keep TF ordered)
   questions.forEach(q => {
     if (q.type !== 'tf' && q.options.length > 0) {
       const optIndices = q.options.map((_, i) => i);
       shuffle(optIndices);
       const newOpts = optIndices.map(i => q.options[i]);
+      // Remap answer
       if (q.type === 'mc' && typeof q.answer === 'number') {
         q.answer = optIndices.indexOf(q.answer);
       } else if (q.type === 'ma' && Array.isArray(q.answer)) {
@@ -1069,6 +1189,9 @@ function submitAnswer() {
 
   if (isCorrect) state.correctCount++; else state.wrongCount++;
   state.history.push({ index: state.currentIndex, correct: isCorrect });
+
+  // 触发音效 + 动画反馈
+  triggerFeedback(isCorrect);
 
   document.getElementById('submitBtn').style.display = 'none';
   document.getElementById('nextBtn').style.display = '';
