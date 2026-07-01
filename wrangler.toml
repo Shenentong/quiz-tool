@@ -4,4 +4,4 @@ pages_build_output_dir = "."
 [[d1_databases]]
 binding = "DB"
 database_name = "quiz-tool-feedback"
-database_id = "CHANGE_ME_RUN_npx_wrangler_d1_create_quiz-tool-feedback"
+database_id = "723561ff-1519-4229-9e22-1bc79317bc19"
