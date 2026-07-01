@@ -395,10 +395,10 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
 
 function splitInlineOptions(line) {
   // Handle "A. xxx  B. xxx  C. xxx" on one line
-  const parts = line.split(/\s{2,}(?=[A-Da-d][.、．\)])/);
+  const parts = line.split(/\s{2,}(?=[A-Da-d][.、．\)：:])/);
   if (parts.length > 1) {
     return parts.map(p => {
-      const m = p.match(/^([A-Da-d])[.、．\)]\s*(.*)/);
+      const m = p.match(/^([A-Da-d])[.、．\)：:]\s*(.*)/);
       return m ? { label: m[1].toUpperCase(), text: m[2].trim() } : null;
     }).filter(Boolean);
   }
@@ -420,6 +420,7 @@ function parseQuestions(rawText) {
   let currentQuiz = '';
   let qnum = 0;
   let inAlt = false;
+  let inChinese = false; // track 中文 section
   let pendingAnswer = null; // accumulate multi-line answers
 
   const clean = s => s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '').trim();
@@ -434,6 +435,7 @@ function parseQuestions(rawText) {
 
   function newQuestion(num, text) {
     inAlt = false;
+    inChinese = false;
     pendingAnswer = null;
     return { number: num, text: text, options: [], answer: null, type: currentType, rawAnswer: null, altText: '' };
   }
@@ -492,17 +494,23 @@ function parseQuestions(rawText) {
     if (/Fill[\s-]in[\s-]the[\s-]Blank|填空题/i.test(line)) { currentType = 'fill'; continue; }
     if (/[█▬]/.test(line) && line.length > 8) continue;
 
-    // --- Number detection ---
-    const numMatch = line.match(/^(\d+)[、.．\)\s]?\s*/);
-    if (numMatch) {
+    // --- Number detection (comprehensive) ---
+    // Supports: 1. / 1、/ 1)/ 1．/ 1：/ 1: / (1) / （1）/ 【1】/ [1]/
+    //           第1题 / 第1题：/ 题1：/ 题1. / Q1. / Q1: / Question 1: /
+    let num = null, textAfter = '';
+    let m;
+    if (m = line.match(/^(\d+)[、.．\)\]：:\s]\s*/)) { num = +m[1]; textAfter = line.slice(m[0].length).trim(); }
+    else if (m = line.match(/^第(\d+)题[：:\s]?/)) { num = +m[1]; textAfter = line.slice(m[0].length).trim(); }
+    else if (m = line.match(/^[（(](\d+)[）)]\s*/)) { num = +m[1]; textAfter = line.slice(m[0].length).trim(); }
+    else if (m = line.match(/^[【\[](\d+)[】\]]\s*/)) { num = +m[1]; textAfter = line.slice(m[0].length).trim(); }
+    else if (m = line.match(/^(?:Question|Q)\.?\s*(\d+)[：:.\s]?/i)) { num = +m[1]; textAfter = line.slice(m[0].length).trim(); }
+    else if (m = line.match(/^题(\d+)[：:.\s]?/)) { num = +m[1]; textAfter = line.slice(m[0].length).trim(); }
+    if (num !== null) {
       flushPendingAnswer();
-      const num = parseInt(numMatch[1]);
-      const textAfter = line.slice(numMatch[0].length).trim();
       if (num !== qnum || !current) {
         saveCurrent();
         current = newQuestion(num, textAfter);
         qnum = num;
-        inAlt = false;
       } else {
         // Same # — bilingual alt section starts
         inAlt = true;
@@ -511,10 +519,17 @@ function parseQuestions(rawText) {
       continue;
     }
 
+    // Reference/source lines
+    if (/^(依据|参考|来源|出处|出自|摘自|选自)[：:]\s*/.test(line)) { continue; }
+
+    // Language section markers
+    if (/^(English|英文)[：:.]?\s*$/i.test(line)) { inChinese = false; continue; }
+    if (/^(中文|Chinese)[：:.]?\s*$/i.test(line)) { inChinese = true; continue; }
+
     // --- Answer markers (check before inAlt and normal flow) ---
-    if (/[✔✓√]/.test(line) || /^答案[：:]\s*/.test(line) || /^Answer[：:]\s*/i.test(line)) {
+    if (/[✔✓√]/.test(line) || /^答案[：:]\s*/.test(line) || /^Answer\s*\/\s*答案[：:]\s*/i.test(line) || /^(Answer|Ans|Key|Keys|Correct)[：:]\s*/i.test(line) || /^[【\[]?(答案|正确答案|参考答案)[】\]]?[：:]?\s*/.test(line)) {
       if (current) {
-        const afterCheck = line.replace(/[✔✓√]/g, '').replace(/^(答案|Answer)[：:]\s*/i, '').trim();
+        const afterCheck = line.replace(/[✔✓√]/g, '').replace(/^(答案|Answer)[：:]\s*/i, '').replace(/^(Answer|答案)\s*\/\s*(Answer|答案)\s*[：:]\s*/i, '').replace(/^(Ans|Key|Keys|Correct)[：:]\s*/i, '').replace(/^[【\[]?(答案|正确答案|参考答案)[】\]]?[：:]?\s*/i, '').trim();
         if (afterCheck.length >= 1) {
           // Complete answer on one line
           current.rawAnswer = line;
@@ -547,21 +562,33 @@ function parseQuestions(rawText) {
     }
 
     // --- Options ---
-    // First try: inline options on one line
-    const inlineOpts = current ? splitInlineOptions(line) : null;
+    // First try: inline options on one line (skip duplicates and Chinese section)
+    const inlineOpts = !inChinese && current ? splitInlineOptions(line) : null;
     if (inlineOpts && inlineOpts.length >= 2) {
-      inlineOpts.forEach(o => current.options.push(o));
+      inlineOpts.forEach(o => {
+        if (!current.options.some(x => x.label === o.label)) {
+          current.options.push(o);
+        }
+      });
       continue;
     }
-    const optMatch = line.match(/^([A-Ea-e])[、.．\)\s]\s*(.+)/);
+    const optMatch = line.match(/^([A-Ea-e])[、.．\)：:\s]\s*(.+)/) || line.match(/^[（(]([A-Da-d])[）)]\s*(.+)/);
     if (optMatch && current && !line.match(/^[A-Ea-e]\)\s*$/)) {
-      current.options.push({ label: optMatch[1].toUpperCase(), text: optMatch[2].trim() });
+      const label = optMatch[1].toUpperCase();
+      // Skip duplicate option labels (Chinese section re-uses A-D)
+      if (!current.options.some(o => o.label === label)) {
+        current.options.push({ label, text: optMatch[2].trim() });
+      }
       continue;
     }
 
     // --- Fallback: append to question text ---
     if (current && line.length > 1) {
-      current.text += ' ' + line;
+      if (inChinese) {
+        current.altText += (current.altText ? '\n' : '') + line;
+      } else {
+        current.text += ' ' + line;
+      }
     }
   }
 
@@ -584,8 +611,9 @@ function parseAnswer(q) {
   // Extract the answer content after removing markers
   let ans = raw
     .replace(/^[✔✓√]\s*/, '')
-    .replace(/^(答案|Answer)[：:]\s*/i, '')
-    .replace(/^[✔✓√]\s*(答案|Answer)[：:]\s*/i, '')
+    .replace(/^[【\[]?(答案|正确答案|参考答案)[】\]]?[：:]?\s*/i, '')
+    .replace(/^(Answer|答案)\s*\/\s*(Answer|答案)\s*[：:]\s*/i, '')
+    .replace(/^(Answer|Ans|Key|Keys|Correct)[：:]\s*/i, '')
     .trim();
 
   if (!ans) return;
