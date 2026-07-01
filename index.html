@@ -393,6 +393,7 @@ header p { font-size: .85rem; opacity: .7; margin-top: 4px; }
     <div class="demo-section">
       <button onclick="loadDemo()">🎯 示例题目</button>
       <button id="wrongBtn" onclick="startWrongQuiz()" style="display:none;border-color:#ef4444;color:#ef4444;">📕 错题本 <span id="wrongCount"></span></button>
+      <button id="clearWrongBtn" onclick="clearWrongBank()" style="display:none;padding:4px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:.75rem;cursor:pointer;background:transparent;color:#9ca3af;">清除全部</button>
     </div>
   </div>
 
@@ -750,14 +751,25 @@ function removeWrongFromBank(text) {
   updateWrongBtn();
 }
 
+function clearWrongBank() {
+  if (!confirm('确定清空错题本吗？')) return;
+  saveWrongQuestions([]);
+  updateWrongBtn();
+  // 如果在错题本模式中，返回首页
+  if (state.wrongMode) showUpload();
+}
+
 function updateWrongBtn() {
   const btn = document.getElementById('wrongBtn');
+  const clearBtn = document.getElementById('clearWrongBtn');
   const count = getWrongQuestions().length;
   if (count > 0) {
     btn.style.display = 'inline-block';
+    clearBtn.style.display = 'inline-block';
     document.getElementById('wrongCount').textContent = `(${count})`;
   } else {
     btn.style.display = 'none';
+    clearBtn.style.display = 'none';
   }
 }
 
@@ -1391,6 +1403,7 @@ function renderSummary() {
     <div class="actions" style="justify-content:center;margin-top:20px;flex-wrap:wrap;">
       ${!state.wrongMode && wrong > 0 ? `<button onclick="reviewWrong()" style="padding:12px 24px;background:#ef4444;color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;"> 复习 ${wrong} 道错题</button>` : ''}
       ${state.wrongMode && remainingWrong > 0 ? `<button onclick="shuffleAndRestart()" style="padding:12px 24px;background:#ef4444;color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;">🔄 继续刷错题</button>` : ''}
+      ${state.wrongMode ? `<button onclick="clearWrongBank()" style="padding:12px 24px;background:transparent;color:#ef4444;border:2px solid #ef4444;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;">🗑️ 清空错题本</button>` : ''}
       <button onclick="shuffleAndRestart()" style="padding:12px 32px;background:#1a1a2e;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;"> 再来一轮</button>
       <button onclick="showUpload()" style="padding:12px 32px;background:#6b7280;color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;"> 换文档</button>
     </div>
