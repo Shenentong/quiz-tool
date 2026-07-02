@@ -596,8 +596,8 @@ function parseQuestions(rawText) {
 
   // Post-process
   questions.forEach(q => {
-    parseAnswer(q);
     finalizeType(q);
+    parseAnswer(q);
     q.text = q.text.replace(/^[▪▸➢\s]+/, '').trim();
   });
 
@@ -643,6 +643,12 @@ function parseAnswer(q) {
 }
 
 function finalizeType(q) {
+  // If options look like True/False, force to TF type regardless of currentType
+  if (q.options.length === 2 && q.options.some(o =>
+    /^(True|False|对|错|T|F|是|否|正确|错误|√|×)$/i.test(o.text.trim())
+  )) {
+    q.type = 'tf';
+  }
   // TF with no explicit options → add default
   if (q.type === 'tf' && q.options.length === 0) {
     q.options = [{ label: 'A', text: 'True' }, { label: 'B', text: 'False' }];
