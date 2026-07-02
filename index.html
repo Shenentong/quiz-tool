@@ -443,21 +443,11 @@ function parseQuestions(rawText) {
   function saveCurrent() {
     flushPendingAnswer();
     if (!current || !current.text.trim()) return;
-    if (!current.type) {
-      if (current.options.length === 2 && current.options.some(o =>
-        /^(True|False|对|错|T|F|是|否|正确|错误|√|×)$/i.test(o.text.trim())
-      )) {
-        current.type = 'tf';
-      } else if (current.options.length > 0) {
-        current.type = 'mc';
-      } else {
-        current.type = 'fill';
-      }
-    }
+    // Don't auto-detect type here — deferred to post-processing
     questions.push({
       id: questions.length + 1,
       number: current.number,
-      type: current.type,
+      type: current.type, // may be null — resolved in post-processing
       quiz: currentQuiz,
       text: current.text.trim(),
       altText: current.altText.trim(),
@@ -465,6 +455,8 @@ function parseQuestions(rawText) {
       answer: current.answer,
       rawAnswer: current.rawAnswer
     });
+    // Reset type after saving so it doesn't leak to next question
+    currentType = null;
   }
 
   for (let i = 0; i < lines.length; i++) {
@@ -594,10 +586,37 @@ function parseQuestions(rawText) {
 
   saveCurrent();
 
-  // Post-process
+  // Post-process: determine type from answer, then parse
   questions.forEach(q => {
+    // Step 1: Extract raw answer text (type-independent)
+    let ansText = '';
+    if (q.rawAnswer) {
+      ansText = q.rawAnswer
+        .replace(/^[✔✓√]\s*/, '')
+        .replace(/^[【\[]?(答案|正确答案|参考答案)[】\]]?[：:]?\s*/i, '')
+        .replace(/^(Answer|答案)\s*\/\s*(Answer|答案)\s*[：:]\s*/i, '')
+        .replace(/^(Answer|Ans|Key|Keys|Correct)[：:]\s*/i, '')
+        .trim();
+    }
+
+    // Step 2: Determine type from answer if no explicit type from section header
+    if (!q.type && ansText) {
+      if (/^(对|是|True|T|正确|√|错|否|False|F|错误|×)$/i.test(ansText)) {
+        q.type = 'tf';
+      } else {
+        const letters = ansText.match(/[A-D]/gi);
+        if (letters) {
+          q.type = letters.length > 1 ? 'ma' : 'mc';
+        }
+      }
+    }
+
+    // Step 3: Finalize type (TF options check, defaults)
     finalizeType(q);
+
+    // Step 4: Parse answer with correct type
     parseAnswer(q);
+
     q.text = q.text.replace(/^[▪▸➢\s]+/, '').trim();
   });
 
@@ -700,14 +719,33 @@ const state = {
 // ===================================================================
 
 const COURSES_KEY = 'quiz_tool_courses';
+const COURSES_BACKUP_KEY = 'quiz_tool_courses_bak';
 let currentCourseId = null;
 
 function getCourses() {
-  try { return JSON.parse(localStorage.getItem(COURSES_KEY)) || []; } catch(e) { return []; }
+  try {
+    const data = localStorage.getItem(COURSES_KEY);
+    if (!data) return [];
+    const courses = JSON.parse(data);
+    if (!Array.isArray(courses)) return [];
+    return courses;
+  } catch(e) {
+    // Try backup
+    try {
+      const bak = localStorage.getItem(COURSES_BACKUP_KEY);
+      return bak ? JSON.parse(bak) : [];
+    } catch(e2) { return []; }
+  }
 }
 
 function saveCourses(courses) {
-  localStorage.setItem(COURSES_KEY, JSON.stringify(courses));
+  try {
+    const str = JSON.stringify(courses);
+    localStorage.setItem(COURSES_KEY, str);
+    localStorage.setItem(COURSES_BACKUP_KEY, str); // backup for safety
+  } catch(e) {
+    console.warn('保存课程失败:', e);
+  }
 }
 
 function addCourse(name, fileName, questions) {
